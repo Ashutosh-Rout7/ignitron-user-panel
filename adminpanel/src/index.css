@@ -1,0 +1,68 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 25% 97%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --primary: 220 70% 25%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 220 30% 92%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 220 20% 94%;
+    --muted-foreground: 220 10% 46%;
+
+    --accent: 28 95% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --border: 220 20% 90%;
+    --radius: 0.75rem;
+  }
+
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    min-height: 100vh;
+  }
+}
+
+@layer utilities {
+  .glass-card {
+    background: rgba(255,255,255,0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  }
+
+  .card-hover {
+    transition: all 0.3s ease;
+  }
+
+  .card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+  }
+
+  .sidebar-active {
+    background-color: #f97316;
+    color: white;
+    border-radius: 8px;
+    font-weight: 500;
+  }
+}
