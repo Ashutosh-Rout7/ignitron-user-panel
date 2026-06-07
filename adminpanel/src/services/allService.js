@@ -87,3 +87,40 @@ export const registeredStd=async()=>{
 
   return response.data;
 };
+
+////==========================================================================
+// Get all organizer requests
+export const getOrganizerRequests = async () => {
+
+  const response = await axios.get(
+    `${BASEURL}/api/admin/organizer-requests`,
+    {
+      withCredentials: true,
+    }
+  );
+
+  return response.data;
+};
+
+// Approve organizer
+export const makeOrganizer = async (userId) => {
+
+  const response = await axios.put(
+    `${BASEURL}/api/admin/user/${userId}/make-organizer`,
+    {}, // empty request body
+    {
+      withCredentials: true,
+    }
+  );
+
+  return response.data;
+};
+
+// Admin profile — reads admin_token cookie
+export const getAdminProfile = async () => {
+  const response = await axios.get(
+    "http://localhost:8080/api/login/admin/me",
+    { withCredentials: true }
+  );
+  return response.data;
+};

@@ -26,43 +26,32 @@ export default function Login() {
     useState(false);
 
   // Login API
-  const handleLogin = async (e) => {
-
+ const handleLogin = async (e) => {
   e.preventDefault();
-
   try {
-
     setLoading(true);
 
     const response = await axios.post(
       "http://localhost:8080/api/login",
-
-      {
-        email: username,
-        password: password,
-      },
-
-      {
-        withCredentials: true,
-      }
+      { email: username, password: password },
+      { withCredentials: true }
     );
 
     if (response.status === 200) {
+      console.log(response.data);
 
-      toast.success("Login Successful");
-
-      navigate("/dashboard");
-
+      if (response.data.roles.includes("ADMIN")) {
+        toast.success("Admin Login Successful");
+        // ✅ small delay to ensure cookie is saved before ProtectedRoute checks it
+        setTimeout(() => navigate("/dashboard"), 100);
+      } else {
+        toast.error("You are not an admin");
+      }
     }
-
   } catch (error) {
-
     console.log(error);
-
     alert("Invalid Credentials");
-
   } finally {
-
     setLoading(false);
   }
 };

@@ -15,13 +15,10 @@ function Payment() {
  async function onPay() {
   try {
     setProcessing(true);
-
-    // 1. create booking
-    await bookingapi(selectedEventIds);  // ← backend will throw if already booked
-
-    // 2. create payment
+    await bookingapi(selectedEventIds);
     const res = await createPayment();
-    confirmPayment();
+    // DELETE this line ↓
+    // confirmPayment();
     window.location.href = res.payment_link_url;
 
   } catch (err) {

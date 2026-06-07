@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { AuthShell } from "@/components/ui/AuthShell";
 import { FormField } from "@/components/ui/FormField";
@@ -9,6 +9,10 @@ import { useApp } from "../lib/app-store";
 
 function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Message passed from Header when admin approves organizer/volunteer role
+  const approvalMessage = location.state?.message;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,34 +20,33 @@ function Login() {
 
   const { loginUser } = useApp();
 
-async function onSubmit(e) {
-  e.preventDefault();
+  async function onSubmit(e) {
+    e.preventDefault();
 
-  if (!email || !password) return;
+    if (!email || !password) return;
 
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    // 1. login (sets cookie/token)
-   await login({ email, password });
+      // 1. login (sets cookie/token)
+      await login({ email, password });
 
-    const user = await getProfile();   // MUST
+      const user = await getProfile(); // MUST
 
-    loginUser(user);
+      loginUser(user);
 
-    if (user.profileComplete) {
-      navigate("/pass-selection");
-    } else {
-      navigate("/complete-profile");
+      if (user.profileComplete) {
+        navigate("/pass-selection");
+      } else {
+        navigate("/complete-profile");
+      }
+    } catch (error) {
+      toast.error("Login Failed");
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
-
-  } catch (error) {
-    toast.error("Login Failed");
-    console.error(error);
-  } finally {
-    setLoading(false);
   }
-}
 
   return (
     <AuthShell
@@ -52,15 +55,19 @@ async function onSubmit(e) {
       footer={
         <>
           New here?{" "}
-          <Link
-            to="/register"
-            className="font-medium text-gradient-brand"
-          >
+          <Link to="/register" className="font-medium text-gradient-brand">
             Create an account
           </Link>
         </>
       }
     >
+      {/* Show approval message when redirected after role upgrade */}
+      {approvalMessage && (
+        <div className="mb-4 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-400">
+          🎉 {approvalMessage}
+        </div>
+      )}
+
       <form onSubmit={onSubmit} className="space-y-4">
         <FormField
           label="Email"
@@ -80,16 +87,16 @@ async function onSubmit(e) {
           required
         />
 
-       <PrimaryButton type="submit" className="w-full" disabled={loading}>
-        {loading ? (
-          <span className="flex items-center justify-center gap-2">
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-            Logging in...
-          </span>
-        ) : (
-          "Login"
-        )}
-     </PrimaryButton>
+        <PrimaryButton type="submit" className="w-full" disabled={loading}>
+          {loading ? (
+            <span className="flex items-center justify-center gap-2">
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              Logging in...
+            </span>
+          ) : (
+            "Login"
+          )}
+        </PrimaryButton>
       </form>
     </AuthShell>
   );

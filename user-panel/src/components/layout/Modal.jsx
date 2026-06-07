@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 
-export function Modal({open,onClose, title, children, footer,}) {
+export function Modal({ open, onClose, title, description, confirmLabel, onConfirm, children, footer }) {
   return (
     <AnimatePresence>
       {open && (
@@ -32,16 +32,39 @@ export function Modal({open,onClose, title, children, footer,}) {
 
             {title && <h2 className="text-lg font-semibold">{title}</h2>}
 
-            <div className="mt-4">{children}</div>
-
-            {footer && (
-              <div className="mt-6 flex justify-end gap-2">
-                {footer}
-              </div>
+            {/* ✅ show description if passed */}
+            {description && (
+              <p className="mt-2 text-sm text-muted-foreground">{description}</p>
             )}
+
+            {/* ✅ show children if passed */}
+            {children && <div className="mt-4">{children}</div>}
+
+            {/* ✅ show custom footer OR auto-generate from confirmLabel/onConfirm */}
+            <div className="mt-6 flex justify-end gap-2">
+              {footer ? footer : (
+                <>
+                  <button
+                    onClick={onClose}
+                    className="rounded-full border border-white/10 px-4 py-2 text-sm hover:bg-white/5"
+                  >
+                    Cancel
+                  </button>
+                  {confirmLabel && onConfirm && (
+                    <button
+                      onClick={onConfirm}
+                      className="rounded-full bg-gradient-brand px-4 py-2 text-sm font-semibold text-primary-foreground"
+                    >
+                      {confirmLabel}
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
           </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
   );
 }
+

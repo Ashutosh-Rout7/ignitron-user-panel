@@ -25,6 +25,7 @@ import ManageEvents from "./pages/ManageEvents";
 import RegisteredStudents from "./pages/RegisteredStudents";
 import NotFound from "./pages/NotFound";
 import Profile from "./components/Profile";
+import Organizers from "./pages/Organizers";
 
 const queryClient = new QueryClient();
 
@@ -59,39 +60,29 @@ const ProtectedRoute = ({ children }) => {
 
   }, []);
 
-  const checkAuth = async () => {
+const checkAuth = async () => {
+  try {
+    const response = await fetch(
+      "http://localhost:8080/api/login/check-auth",
+      { method: "GET", credentials: "include" }
+    );
 
-    try {
-
-      const response = await fetch(
-        "http://localhost:8080/api/login/check-auth",
-        {
-          method: "GET",
-
-          credentials: "include",
-        }
-      );
-
-      if (response.ok) {
-
-        setAuthenticated(true);
-
-      } else {
-
-        setAuthenticated(false);
-      }
-
-    } catch (error) {
-
-      console.log(error);
-
+    if (response.ok) {
+      setAuthenticated(true);
+    } else if (response.status === 403) {
+      // ✅ logged in but not admin — redirect to login with message
       setAuthenticated(false);
-
-    } finally {
-
-      setLoading(false);
+      console.log("Not an admin");
+    } else {
+      setAuthenticated(false);
     }
-  };
+  } catch (error) {
+    console.log(error);
+    setAuthenticated(false);
+  } finally {
+    setLoading(false);
+  }
+};
 
   if (loading) {
 
@@ -167,11 +158,7 @@ const App = () => (
 
             <Route
               path="/organizers"
-              element={
-                <PlaceholderPage
-                  title="Organizers"
-                />
-              }
+              element={<Organizers />}
             />
 
             <Route

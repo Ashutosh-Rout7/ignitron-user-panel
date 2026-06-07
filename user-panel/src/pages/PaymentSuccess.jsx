@@ -9,7 +9,6 @@ function PaymentSuccess() {
   const orderId = searchParams.get("orderId");
   const { confirmPayment } = useApp();
   const [status, setStatus] = useState("verifying"); // verifying | success | failed
-
   useEffect(() => {
     if (!orderId) return;
 

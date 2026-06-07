@@ -6,7 +6,13 @@ import {
   useState,
 } from "react";
 
-import { getpass, getProfile ,getMyBooking} from "../services/AllServices";
+import {
+  getpass,
+  getProfile,
+  getMyBooking,
+  requestOrganizerApi,
+  requestVolunteerApi,
+} from "../services/AllServices";
 
 const AppCtx = createContext(null);
 const STORAGE_KEY = "ignitron-app-state-v1";
@@ -16,8 +22,7 @@ const seedNotifications = [
     id: "n1",
     type: "announcement",
     title: "Ignitron 2027 is live",
-    description:
-      "Early-bird passes are now open. Grab them before they're gone.",
+    description: "Early-bird passes are now open. Grab them before they're gone.",
     timestamp: "2m ago",
     read: false,
   },
@@ -32,7 +37,12 @@ export function AppProvider({ children }) {
   const [selectedEventIds, setSelected] = useState([]);
   const [paid, setPaid] = useState(false);
   const [notifications, setNotifications] = useState(seedNotifications);
-  const [hydrated, setHydrated] = useState(false);  // ← ADD THIS
+  const [hydrated, setHydrated] = useState(false);
+
+  const [organizerRequested, setOrganizerRequested] = useState(false);
+  const [volunteerRequested, setVolunteerRequested] = useState(false);
+  const [organizerApproved, setOrganizerApproved] = useState(false);
+  const [volunteerApproved, setVolunteerApproved] = useState(false);
 
   // ---------------- LOAD PASSES ----------------
   useEffect(() => {
@@ -47,31 +57,95 @@ export function AppProvider({ children }) {
     if (!user) return;
     getProfile()
       .then((fullUser) => {
-        setUser(fullUser);
-        setPassState(fullUser.passId || null);
+        if (fullUser.id === user.id || fullUser._id === user._id) {
+          setUser(fullUser);
+          setPassState(fullUser.passId || null);
+        }
       })
       .catch(() => {});
   }, [user?.id]);
 
-  // ---------------- SYNC BOOKING STATE ----------------
-    useEffect(() => {
-      if (!user) return;
+  // ---------------- REFETCH ON TAB FOCUS ----------------
+  useEffect(() => {
+    if (!user) return;
 
-      getMyBooking()
-        .then((booking) => {
-          if (booking) {
-            setSelected(booking.event_ids || []);
-            setPaid(true);
-          }
-        })
-        .catch(() => {});
-    }, [user?.id]);
+    const handleFocus = async () => {
+      try {
+        const fullUser = await getProfile();
+        if (fullUser.id === user.id || fullUser._id === user._id) {
+          setUser(fullUser);
+        }
+      } catch (e) {}
+    };
+
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [user?.id]);
+
+  // ---------------- SYNC BOOKING STATE ----------------
+  // ✅ paid is NEVER stored in localStorage — always derived from backend
+  useEffect(() => {
+    if (!user) return;
+    getMyBooking()
+      .then((booking) => {
+        if (booking) {
+          setSelected(booking.event_ids || []);
+          setPaid(booking.status === "CONFIRMED");
+        } else {
+          setPaid(false);
+        }
+      })
+      .catch(() => {
+        setPaid(false);
+      });
+  }, [user?.id]);
+
+  // ---------------- SYNC ROLES ----------------
+  useEffect(() => {
+    if (!user) return;
+    const roles = user.roles || [];
+    setOrganizerApproved(roles.includes("ORGANIZER"));
+    setVolunteerApproved(roles.includes("VOLUNTEER"));
+    setOrganizerRequested(user.organizerRequested || false);
+    setVolunteerRequested(user.volunteerRequested || false);
+  }, [user]);
+
+  // ---------------- POLL FOR APPROVAL ----------------
+  useEffect(() => {
+    if (!user) return;
+    if (!organizerRequested && !volunteerRequested) return;
+
+    const currentUserId = user.id || user._id;
+
+    const interval = setInterval(async () => {
+      try {
+        const freshUser = await getProfile();
+        const freshId = freshUser.id || freshUser._id;
+        if (freshId !== currentUserId) return;
+
+        const roles = freshUser.roles || [];
+
+        if (organizerRequested && roles.includes("ORGANIZER")) {
+          clearInterval(interval);
+          window.dispatchEvent(new CustomEvent("organizer-approved"));
+        }
+
+        if (volunteerRequested && roles.includes("VOLUNTEER")) {
+          clearInterval(interval);
+          window.dispatchEvent(new CustomEvent("volunteer-approved"));
+        }
+      } catch (e) {}
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [user?.id, organizerRequested, volunteerRequested]);
+
   // ---------------- RESTORE ----------------
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) {
-        setHydrated(true);  // ← nothing to restore, still mark hydrated
+        setHydrated(true);
         return;
       }
       const p = JSON.parse(raw);
@@ -79,17 +153,17 @@ export function AppProvider({ children }) {
       setUser(p.user || null);
       setPassState(p.pass || null);
       setSelected(p.selectedEventIds || []);
-      setPaid(!!p.paid);
+      // ✅ paid is NOT restored from localStorage
     } catch (e) {
       console.log("storage error", e);
     } finally {
-      setHydrated(true);  // ← always mark hydrated
+      setHydrated(true);
     }
   }, []);
 
   // ---------------- SAVE ----------------
   useEffect(() => {
-    if (!hydrated) return;  // ← don't save before restore finishes
+    if (!hydrated) return;
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
@@ -97,10 +171,10 @@ export function AppProvider({ children }) {
         user,
         pass,
         selectedEventIds,
-        paid,
+        // ✅ paid is NOT saved to localStorage
       })
     );
-  }, [role, user, pass, selectedEventIds, paid, hydrated]);
+  }, [role, user, pass, selectedEventIds, hydrated]);
 
   // ---------------- RESOLVE PASS OBJECT ----------------
   const resolvedPass =
@@ -118,9 +192,13 @@ export function AppProvider({ children }) {
       selectedEventIds,
       paid,
       allEvents,
-      hydrated,  // ← ADD THIS
+      hydrated,
       setAllEvents,
       notifications,
+      organizerRequested,
+      volunteerRequested,
+      organizerApproved,
+      volunteerApproved,
 
       // LOGIN
       loginUser: (userData) => {
@@ -136,11 +214,16 @@ export function AppProvider({ children }) {
 
       // LOGOUT
       logout: () => {
+        localStorage.removeItem(STORAGE_KEY);
         setRole("guest");
         setUser(null);
         setPassState(null);
         setSelected([]);
         setPaid(false);
+        setOrganizerRequested(false);
+        setVolunteerRequested(false);
+        setOrganizerApproved(false);
+        setVolunteerApproved(false);
       },
 
       // SET PASS
@@ -177,6 +260,22 @@ export function AppProvider({ children }) {
           ...n,
         ]);
       },
+
+      // REQUEST ORGANIZER
+      requestOrganizer: async () => {
+        const res = await requestOrganizerApi();
+        setOrganizerRequested(true);
+        setUser((prev) => ({ ...prev, organizerRequested: true }));
+        return res;
+      },
+
+      // REQUEST VOLUNTEER
+      requestVolunteer: async () => {
+        const res = await requestVolunteerApi();
+        setVolunteerRequested(true);
+        setUser((prev) => ({ ...prev, volunteerRequested: true }));
+        return res;
+      },
     }),
     [
       role,
@@ -187,13 +286,15 @@ export function AppProvider({ children }) {
       paid,
       notifications,
       allEvents,
-      hydrated,  // ← ADD THIS
+      hydrated,
+      organizerRequested,
+      volunteerRequested,
+      organizerApproved,
+      volunteerApproved,
     ]
   );
 
-  return (
-    <AppCtx.Provider value={value}>{children}</AppCtx.Provider>
-  );
+  return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;
 }
 
 export function useApp() {

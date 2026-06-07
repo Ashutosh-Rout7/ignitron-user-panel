@@ -9,7 +9,7 @@ import { register } from "../services/AllServices";
 function Register() {
 
    //audio setting
-  const clickSound = new Audio("/sound/thank.mp3");
+  const clickSound = new Audio("/sound/cong.mp3");
   const navigate = useNavigate();
 
   const [name, setName] = useState("");
@@ -38,7 +38,9 @@ function Register() {
         email,
         password,
       });
-       clickSound.play();
+      clickSound.play().catch((err) => {
+          console.log(err);
+        });
       toast.success("Registration successful!");
       navigate("/login");
     } catch (error) {
