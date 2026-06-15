@@ -2,7 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { toast } from "sonner";
 import { AuthShell } from "../components/ui/AuthShell";
-import { FormField } from "../components/ui/FormField";
+import { formField } from "../components/ui/FormField";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { register } from "../services/AllServices";
 import { Eye, EyeOff } from "lucide-react";
