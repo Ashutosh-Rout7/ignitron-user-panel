@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ImagePlus } from "lucide-react";
-import { FormField } from "../components/ui/FormField";
+import { FormField } from "../components/ui/formfield";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { profileupdate } from "@/services/allServices";
 import { useApp } from "../lib/app-store";
