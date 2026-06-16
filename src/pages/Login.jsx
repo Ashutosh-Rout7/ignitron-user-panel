@@ -114,6 +114,15 @@ if (error.response?.status === 401) {
             </button>
           }
         />
+        {/* Forgot Password link */}
+        <div className="text-right -mt-2">
+          <Link
+            to="/forgot-password"
+            className="text-sm text-gray-400 hover:text-white"
+          >
+            Forgot Password?
+          </Link>
+        </div>
 
         <PrimaryButton
           type="submit"
