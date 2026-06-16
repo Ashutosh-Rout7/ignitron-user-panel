@@ -6,12 +6,20 @@ import { useApp } from "../lib/app-store";
 import { getallEvents } from "../services/AllServices";
 
 function Events() {
-  const { resolvedPass, selectedEventIds, toggleEvent,allEvents,setAllEvents } =useApp();
+  const {
+    resolvedPass,
+    selectedEventIds,
+    toggleEvent,
+    allEvents,
+    setAllEvents,
+  } = useApp();
 
- // console.log("resolvedPass =", resolvedPass);
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
+
+  // Added filter state
+  const [selectedType, setSelectedType] = useState("ALL");
 
   useEffect(() => {
     loadEvents();
@@ -39,6 +47,16 @@ function Events() {
 
   const limitReached =
     !!currentPass && selectedEventIds.length >= limit;
+
+  // Added filtered events
+  const filteredEvents =
+    selectedType === "ALL"
+      ? allEvents
+      : allEvents.filter(
+          (event) =>
+            event.type?.toLowerCase() ===
+            selectedType.toLowerCase()
+        );
 
   return (
     <div className="mx-auto max-w-7xl px-4 pb-40 pt-12">
@@ -102,6 +120,53 @@ function Events() {
         </div>
       )}
 
+      {/* FILTER BUTTONS */}
+      <div className="mt-6 flex flex-wrap gap-3">
+        <button
+          onClick={() => setSelectedType("ALL")}
+          className={`rounded-full px-4 py-2 text-sm font-medium ${
+            selectedType === "ALL"
+              ? "bg-gradient-brand text-primary-foreground"
+              : "glass"
+          }`}
+        >
+          All
+        </button>
+
+        <button
+          onClick={() => setSelectedType("sports")}
+          className={`rounded-full px-4 py-2 text-sm font-medium ${
+            selectedType === "sports"
+              ? "bg-gradient-brand text-primary-foreground"
+              : "glass"
+          }`}
+        >
+          Sports
+        </button>
+
+        <button
+          onClick={() => setSelectedType("cultural")}
+          className={`rounded-full px-4 py-2 text-sm font-medium ${
+            selectedType === "cultural"
+              ? "bg-gradient-brand text-primary-foreground"
+              : "glass"
+          }`}
+        >
+          Cultural
+        </button>
+
+        <button
+          onClick={() => setSelectedType("technical")}
+          className={`rounded-full px-4 py-2 text-sm font-medium ${
+            selectedType === "technical"
+              ? "bg-gradient-brand text-primary-foreground"
+              : "glass"
+          }`}
+        >
+          Technical
+        </button>
+      </div>
+
       {/* EVENTS */}
       {loading ? (
         <div className="mt-12 text-center">
@@ -109,8 +174,9 @@ function Events() {
         </div>
       ) : (
         <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {console.log("Rendering events", allEvents)}
-          {allEvents.map((e) => {
+          {console.log("Rendering events", filteredEvents)}
+
+          {filteredEvents.map((e) => {
             const isSelected =
               selectedEventIds.includes(e.id);
 
@@ -135,7 +201,6 @@ function Events() {
       {currentPass && selectedEventIds.length > 0 && (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/5 glass-strong">
           <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-4 md:flex-row">
-
             <div className="flex items-center gap-6 text-sm">
               <span>
                 <span className="text-muted-foreground">
