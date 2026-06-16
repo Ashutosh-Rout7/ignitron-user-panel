@@ -49,7 +49,10 @@ function Login() {
 if (error.response?.status === 401) {
   toast.error("Invalid email or password");
 } else if (error.response?.status === 403) {
-  toast.error("Please verify your email before logging in. Check your inbox.");
+  toast.error(
+  "Please verify your email first. Check your inbox and spam folder!",
+  { duration: 8000 }
+);
 } else if (error.response?.status === 400) {
   toast.error("Please check your input");
 } else {
