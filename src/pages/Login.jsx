@@ -45,13 +45,16 @@ function Login() {
     } catch (error) {
   console.error(error);
 
-  if (error.response?.status === 401) {
-    toast.error(error.response.data.message);
-  } else if (error.response?.status === 400) {
-    toast.error("Please check your input");
-  } else {
-    toast.error("Something went wrong");
-  }
+  // ✅ NEW
+if (error.response?.status === 401) {
+  toast.error("Invalid email or password");
+} else if (error.response?.status === 403) {
+  toast.error("Please verify your email before logging in. Check your inbox.");
+} else if (error.response?.status === 400) {
+  toast.error("Please check your input");
+} else {
+  toast.error("Something went wrong");
+}
 } finally {
       setLoading(false);
     }

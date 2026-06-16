@@ -14,6 +14,7 @@ import Payment from "./pages/Payment";
 import Profile from "./pages/Profile";
 import MyRegistrations from "./pages/MyRegistrations";
 import PaymentSuccess from "./pages/PaymentSuccess";  
+import VerifyEmail from "./pages/VerifyEmail";
 
 
 
@@ -27,6 +28,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/complete-profile" element={<CompleteProfile />}/>
+        <Route path="/verify-email" element={<VerifyEmail />} />  {/* ← ADD THIS */}
 
         {/* Protected Routes */}
         <Route

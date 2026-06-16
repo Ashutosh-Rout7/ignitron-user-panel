@@ -43,8 +43,9 @@ function Register() {
       clickSound.play().catch((err) => {
           console.log(err);
         });
-      toast.success("Registration successful!");
-      navigate("/login");
+    // ✅ NEW
+    toast.success("Registration successful! Please check your email to verify your account.");
+   // Don't navigate to login yet — user must verify email first
     } catch (error) {
       console.log("FULL ERROR:", error);
 

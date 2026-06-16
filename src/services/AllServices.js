@@ -147,3 +147,9 @@ export const askIgnitronAI = async (question) => {
 
   return response.data;
 };
+
+// verify email
+export const verifyEmail = async (token) => {
+  const response = await API.get(`/api/register/verify-email?token=${token}`);
+  return response.data;
+};
