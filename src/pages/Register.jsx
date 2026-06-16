@@ -44,7 +44,7 @@ function Register() {
           console.log(err);
         });
     // ✅ NEW
-    toast.success("Registration successful! Please check your email to verify your account.");
+    toast.success("Registration successful! Check your email (including spam folder) to verify your account.");
    // Don't navigate to login yet — user must verify email first
     } catch (error) {
       console.log("FULL ERROR:", error);
