@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { CheckCircle2, Sparkles } from "lucide-react";
@@ -18,6 +18,30 @@ const { user, setPass } = useApp();  // ← add setPass
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState(""); // ✅ NEW
+
+  // ── 3D tilt refs (one per card, keyed by opt.id) ──
+  const cardRefs = useRef({});
+
+  const handleMouseMove = (e, id) => {
+    const card = cardRefs.current[id];
+    if (!card) return;
+    const r = card.getBoundingClientRect();
+    const x = e.clientX - r.left;
+    const y = e.clientY - r.top;
+    const cx = r.width / 2;
+    const cy = r.height / 2;
+    const rotateX = ((y - cy) / cy) * -10;
+    const rotateY = ((x - cx) / cx) * 10;
+    card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-6px) scale(1.03)`;
+    card.style.boxShadow = `${-rotateY * 1.5}px ${rotateX * -1.5 + 24}px 50px rgba(0,0,0,0.55)`;
+  };
+
+  const handleMouseLeave = (id) => {
+    const card = cardRefs.current[id];
+    if (!card) return;
+    card.style.transform = "perspective(800px) rotateX(0deg) rotateY(0deg) translateY(0px) scale(1)";
+    card.style.boxShadow = "";
+  };
 
   useEffect(() => {
     loadPasses();
@@ -103,12 +127,16 @@ const onContinue = async () => {
             return (
               <motion.button
                 key={opt.id}
+                ref={(el) => { cardRefs.current[opt.id] = el; }}
                 type="button"
                 onClick={() => setSelected(opt)}
+                onMouseMove={(e) => handleMouseMove(e, opt.id)}
+                onMouseLeave={() => handleMouseLeave(opt.id)}
                 whileHover={{ y: -4 }}
                 animate={{
                   scale: active ? 1.02 : 1,
                 }}
+                style={{ transition: "transform 0.15s ease, box-shadow 0.15s ease" }}
                 className={cn(
                   "relative overflow-hidden rounded-3xl border p-8 text-left transition glass border-white/5",
                   active && "ring-brand border-transparent"
