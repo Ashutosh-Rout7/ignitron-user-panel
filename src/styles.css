@@ -180,3 +180,8 @@
   .shadow-glow { box-shadow: var(--shadow-glow); }
   .ring-brand { box-shadow: 0 0 0 1px oklch(0.72 0.19 45 / 0.6), 0 0 40px oklch(0.72 0.19 45 / 0.25); }
 }
+
+/* ── Cat Cursor ── */
+* {
+  cursor: none !important;
+}
