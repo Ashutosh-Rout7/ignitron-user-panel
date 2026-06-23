@@ -34,22 +34,28 @@ function CatCursor() {
     };
   }, []);
 
-  return (
+return (
     <div
       ref={catRef}
       style={{
         position: "fixed",
+        left: 0,          // ← add this
+        top: 0,           // ← add this
         pointerEvents: "none",
         zIndex: 9999,
         userSelect: "none",
+        mixBlendMode: "normal",
       }}
     >
       <img
         src="/cat.gif"
-        width="80"
-        height="80"
+        width="70"
+        height="70"
         alt="cat"
-        style={{ imageRendering: "pixelated" }}
+        style={{
+          imageRendering: "pixelated",
+          mixBlendMode: "screen",   // ← this removes white background!
+        }}
       />
     </div>
   );
