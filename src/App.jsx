@@ -17,14 +17,13 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 import VerifyEmail from "./pages/VerifyEmail";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
-import CatCursor from "./components/CatCursor";
+
 
 
 function App() {
   return (
     <MainLayout>
       <Toaster richColors position="top-right" />
-      <CatCursor /> 
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<Home />} />
