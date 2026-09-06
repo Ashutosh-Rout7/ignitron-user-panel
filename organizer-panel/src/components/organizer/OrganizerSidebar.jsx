@@ -6,7 +6,6 @@ import {
   Users,
   TicketCheck,
   User,
-  LogOut,
   Flame,
 } from "lucide-react";
 
@@ -126,22 +125,6 @@ const OrganizerSidebar = ({ onNavigate }) => {
           );
         })}
       </nav>
-
-      {/* Logout */}
-      <div className="border-t border-white/10 p-3">
-
-        <Link
-          to="/"
-          onClick={onNavigate}
-          className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-white/70 transition-all hover:bg-white/5 hover:text-white"
-        >
-
-          <LogOut className="h-5 w-5" />
-
-          <span>Logout</span>
-
-        </Link>
-      </div>
     </aside>
   );
 };

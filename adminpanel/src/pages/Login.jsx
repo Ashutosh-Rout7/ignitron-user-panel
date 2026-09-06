@@ -9,6 +9,8 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 export default function Login() {
 
   const navigate = useNavigate();
@@ -32,7 +34,7 @@ export default function Login() {
     setLoading(true);
 
     const response = await axios.post(
-      "http://localhost:8080/api/login",
+      `${BASE_URL}/api/login`,
       { email: username, password: password },
       { withCredentials: true }
     );
@@ -49,9 +51,14 @@ export default function Login() {
       }
     }
   } catch (error) {
-    console.log(error);
-    alert("Invalid Credentials");
-  } finally {
+  console.log(error);
+
+  if (error.response?.status === 401) {
+    toast.error(error.response.data.message);
+  } else {
+    toast.error("Something went wrong");
+  }
+} finally {
     setLoading(false);
   }
 };

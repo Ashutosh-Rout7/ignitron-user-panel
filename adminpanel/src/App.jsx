@@ -26,6 +26,9 @@ import RegisteredStudents from "./pages/RegisteredStudents";
 import NotFound from "./pages/NotFound";
 import Profile from "./components/Profile";
 import Organizers from "./pages/Organizers";
+import Volunteers from "./pages/Volunteers";
+
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const queryClient = new QueryClient();
 
@@ -63,7 +66,7 @@ const ProtectedRoute = ({ children }) => {
 const checkAuth = async () => {
   try {
     const response = await fetch(
-      "http://localhost:8080/api/login/check-auth",
+      `${BASE_URL}/api/login/check-auth`,
       { method: "GET", credentials: "include" }
     );
 
@@ -130,7 +133,6 @@ const App = () => (
               </ProtectedRoute>
             }
           >
-
             <Route
               path="/dashboard"
               element={<Dashboard />}
@@ -163,20 +165,7 @@ const App = () => (
 
             <Route
               path="/volunteers"
-              element={
-                <PlaceholderPage
-                  title="Volunteers"
-                />
-              }
-            />
-
-            <Route
-              path="/categories"
-              element={
-                <PlaceholderPage
-                  title="Categories"
-                />
-              }
+              element={<Volunteers />}  
             />
 
             <Route

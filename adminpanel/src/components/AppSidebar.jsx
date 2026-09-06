@@ -25,6 +25,8 @@ import {
   ChevronRight,
 } from "lucide-react";
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const menuItems = [
   {
     title: "Dashboard",
@@ -69,18 +71,6 @@ const menuItems = [
   },
 
   {
-    title: "Categories",
-    url: "/categories",
-    icon: Tag,
-  },
-
-  {
-    title: "Reports",
-    url: "/reports",
-    icon: BarChart3,
-  },
-
-  {
     title: "Create Notification",
     url: "/create-notification",
     icon: Bell,
@@ -102,7 +92,7 @@ const AppSidebar = () => {
     try {
 
       await axios.post(
-        "http://localhost:8080/api/login/logout",
+         `${BASE_URL}/api/login/admin/logout`,
         {},
         {
           withCredentials: true,
@@ -187,7 +177,7 @@ const AppSidebar = () => {
 
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-300 hover:bg-red-500 hover:text-white w-full transition-all duration-200"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-300 hover:bg-red-500 hover:text-white w-full transition-all duration-200 cursor-pointer"
         >
 
           <LogOut className="w-[18px] h-[18px] shrink-0" />
@@ -203,7 +193,7 @@ const AppSidebar = () => {
         onClick={() =>
           setCollapsed(!collapsed)
         }
-        className="absolute top-20 -right-3 w-6 h-6 rounded-full bg-white border border-gray-300 shadow-sm flex items-center justify-center text-gray-600 hover:text-black transition-colors z-50"
+        className="absolute top-20 -right-3 w-6 h-6 rounded-full bg-white border border-gray-300 shadow-sm flex items-center justify-center text-gray-600 hover:text-black transition-colors z-50 cursor-pointer"
         style={{
           left: collapsed ? 57 : 247,
         }}

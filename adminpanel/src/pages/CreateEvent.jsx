@@ -280,7 +280,7 @@ const CreateEvent = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-12 rounded-2xl bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold text-sm shadow-lg hover:scale-[1.01] active:scale-[0.98] transition-all duration-300 disabled:opacity-50"
+            className="w-full h-12 rounded-2xl bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold text-sm shadow-lg hover:scale-[1.01] active:scale-[0.98] transition-all duration-300 disabled:opacity-50 cursor-pointer"
           >
             {loading
               ? "Creating Event..."

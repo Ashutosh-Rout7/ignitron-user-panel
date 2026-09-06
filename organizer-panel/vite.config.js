@@ -5,9 +5,14 @@ import path from "path";
 export default defineConfig({
   plugins: [react()],
 
-    server: {
-    port: 3001, // change to any port you want
+  define: {
+    global: "globalThis",  // ← add this
   },
+
+  server: {
+    port: 3001,
+  },
+
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

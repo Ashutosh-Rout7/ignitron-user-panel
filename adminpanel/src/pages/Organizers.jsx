@@ -3,18 +3,22 @@ import { CheckCircle2, XCircle, Users, Clock, GraduationCap } from "lucide-react
 import { toast } from "sonner";
 import axios from "axios";
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const API = axios.create({
-  baseURL: "http://localhost:8080",
+ baseURL: BASE_URL,
   withCredentials: true,
 });
 
 export default function Organizers() {
   const [requests, setRequests] = useState([]);
+  const [organizers, setOrganizers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(null);
 
   useEffect(() => {
     fetchRequests();
+    fetchOrganizers();
   }, []);
 
   const fetchRequests = async () => {
@@ -30,13 +34,23 @@ export default function Organizers() {
     }
   };
 
+  const fetchOrganizers = async () => {
+    try {
+      const response = await API.get("/api/admin/organizers");
+      setOrganizers(response.data || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleConfirm = async (user) => {
     try {
       setConfirming(user.id);
       await API.put(`/api/admin/user/${user.id}/make-organizer`);
       toast.success(`${user.fullname} is now an Organizer!`);
-      // remove from list after approval
       setRequests((prev) => prev.filter((r) => r.id !== user.id));
+      // ✅ refresh organizers list after approval
+      fetchOrganizers();
     } catch (err) {
       console.error(err);
       toast.error("Failed to approve organizer");
@@ -47,7 +61,6 @@ export default function Organizers() {
 
   const handleReject = async (user) => {
     try {
-      // just remove from UI — optionally call a reject API
       setRequests((prev) => prev.filter((r) => r.id !== user.id));
       toast.success(`Request from ${user.fullname} rejected.`);
     } catch (err) {
@@ -77,7 +90,7 @@ export default function Organizers() {
         </div>
       </div>
 
-      {/* Content */}
+      {/* Pending Requests */}
       {loading ? (
         <div className="glass-card p-12 text-center text-muted-foreground">
           Loading requests...
@@ -99,19 +112,14 @@ export default function Organizers() {
               key={user.id}
               className="flex items-center justify-between rounded-2xl border border-border bg-card p-5 hover:border-orange-500/30 transition"
             >
-              {/* Avatar + Info */}
               <div className="flex items-center gap-4">
                 <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 text-lg font-bold text-white">
                   {user.fullname?.charAt(0).toUpperCase()}
                 </div>
 
                 <div>
-                  <p className="font-semibold text-foreground">
-                    {user.fullname}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {user.email}
-                  </p>
+                  <p className="font-semibold text-foreground">{user.fullname}</p>
+                  <p className="text-xs text-muted-foreground">{user.email}</p>
 
                   <div className="mt-1 flex flex-wrap gap-2">
                     <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/10 px-2 py-0.5 text-[10px] font-medium text-orange-600">
@@ -131,7 +139,6 @@ export default function Organizers() {
                 </div>
               </div>
 
-              {/* Actions */}
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handleReject(user)}
@@ -152,6 +159,67 @@ export default function Organizers() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ✅ Approved Organizers List */}
+      {organizers.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">
+                All Organizers
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Students with organizer access.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2">
+              <Users className="h-4 w-4 text-orange-500" />
+              <span className="text-sm font-medium">
+                {organizers.length} Total
+              </span>
+            </div>
+          </div>
+
+          <div className="grid gap-4">
+            {organizers.map((user) => (
+              <div
+                key={user.id}
+                className="flex items-center justify-between rounded-2xl border border-border bg-card p-5 hover:border-orange-500/30 transition"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 text-lg font-bold text-white">
+                    {user.fullname?.charAt(0).toUpperCase()}
+                  </div>
+
+                  <div>
+                    <p className="font-semibold text-foreground">{user.fullname}</p>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
+
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-orange-500/10 px-2 py-0.5 text-[10px] font-medium text-orange-600">
+                        <GraduationCap className="h-3 w-3" />
+                        {user.regdNo || "N/A"}
+                      </span>
+                      <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-medium text-blue-600">
+                        {user.department || "N/A"}
+                      </span>
+                      <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-[10px] font-medium text-green-600">
+                        {user.year || "N/A"}
+                      </span>
+                      <span className="rounded-full bg-purple-500/10 px-2 py-0.5 text-[10px] font-medium text-purple-600">
+                        {user.degree || "N/A"}
+                      </span>
+                      <span className="rounded-full bg-orange-500/10 px-2 py-0.5 text-[10px] font-medium text-orange-600">
+                        ✅ Organizer
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

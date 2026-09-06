@@ -1,0 +1,183 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --radius: 1rem;
+
+  --navy: #0f172a;
+  --navy-2: #1e293b;
+  --orange: #f97316;
+  --orange-hover: #ea580c;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+
+  --background: #f1f5f9;
+  --foreground: #0f172a;
+
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+
+  --primary: #0f172a;
+  --primary-foreground: #ffffff;
+
+  --secondary: #f8fafc;
+  --secondary-foreground: #0f172a;
+
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+
+  --accent: #f97316;
+  --accent-foreground: #ffffff;
+
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #f97316;
+
+  --shadow-soft: 0 10px 30px -10px rgba(15, 23, 42, 0.18);
+
+  --shadow-glow-orange:
+    0 0 0 1px rgba(249, 115, 22, 0.3),
+    0 10px 40px -10px rgba(249, 115, 22, 0.35);
+
+  --gradient-hero: linear-gradient(
+    135deg,
+    #0f172a 0%,
+    #312e81 60%,
+    #581c87 100%
+  );
+
+  --gradient-orange: linear-gradient(
+    135deg,
+    var(--orange) 0%,
+    var(--orange-hover) 100%
+  );
+
+  --gradient-blue: linear-gradient(
+    135deg,
+    #3b82f6 0%,
+    #4338ca 100%
+  );
+
+  --gradient-purple: linear-gradient(
+    135deg,
+    #a855f7 0%,
+    #7e22ce 100%
+  );
+
+  --gradient-green: linear-gradient(
+    135deg,
+    #22c55e 0%,
+    #16a34a 100%
+  );
+}
+
+* {
+  border-color: var(--border);
+}
+
+html,
+body {
+  font-family: "Inter", sans-serif;
+}
+
+body {
+  background:
+    radial-gradient(
+      1200px 600px at -10% -20%,
+      rgba(249, 115, 22, 0.1),
+      transparent 60%
+    ),
+    radial-gradient(
+      1000px 500px at 110% 10%,
+      rgba(15, 23, 42, 0.15),
+      transparent 60%
+    ),
+    var(--background);
+
+  color: var(--foreground);
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: "Plus Jakarta Sans", "Inter", sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* Glass Effects */
+
+.glass {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: var(--shadow-soft);
+}
+
+.glass-dark {
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.orange-glow {
+  box-shadow: var(--shadow-glow-orange);
+}
+
+/* Animations */
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.4s ease-out both;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.25s ease-out both;
+}
+
+/* Scrollbar */
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.2);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(15, 23, 42, 0.35);
+}

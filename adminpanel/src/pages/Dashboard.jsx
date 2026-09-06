@@ -1,365 +1,341 @@
+import { useEffect, useState } from "react";
 import {
   CalendarCheck,
   Users,
   UserCog,
   Heart,
-  TrendingUp,
-  TrendingDown,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  IndianRupee,
 } from "lucide-react";
 
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Area,
-  AreaChart,
-} from "recharts";
+  getCompletedStudentsCount,
+  getEventsCount,
+  getOrganizersCount,
+  getVolunteersCount,
+  getAllBookings,
+  getTotalRevenue,
+} from "../services/allService";
 
-const stats = [
+const statConfig = [
   {
-    title: "Total Events",
-    value: "48",
-    change: "+12%",
-    icon: CalendarCheck,
-    up: true,
-  },
-  {
-    title: "Total Students",
-    value: "2,847",
-    change: "+8%",
+    key: "totalStudents",
+    label: "Total Students",
     icon: Users,
-    up: true,
+    color: "from-blue-500 to-blue-600",
   },
   {
-    title: "Total Organizers",
-    value: "124",
-    change: "+3%",
+    key: "totalEvents",
+    label: "Total Events",
+    icon: CalendarCheck,
+    color: "from-violet-500 to-violet-600",
+  },
+  {
+    key: "totalOrganizers",
+    label: "Total Organizers",
     icon: UserCog,
-    up: true,
+    color: "from-emerald-500 to-emerald-600",
   },
   {
-    title: "Total Volunteers",
-    value: "389",
-    change: "-2%",
+    key: "totalVolunteers",
+    label: "Total Volunteers",
     icon: Heart,
-    up: false,
+    color: "from-rose-500 to-rose-600",
+  },
+  {
+    key: "totalRevenue",
+    label: "Total Revenue",
+    icon: IndianRupee,
+    color: "from-amber-500 to-amber-600",
+    isRevenue: true,
+  },
+  {
+    key: "totalBookings",
+    label: "Confirmed Bookings",
+    icon: CheckCircle2,
+    color: "from-teal-500 to-teal-600",
   },
 ];
 
-const barData = [
-  { name: "Tech Fest", participants: 420 },
-  { name: "Cultural", participants: 380 },
-  { name: "Sports", participants: 290 },
-  { name: "Workshop", participants: 350 },
-  { name: "Hackathon", participants: 480 },
-  { name: "Seminar", participants: 210 },
-];
+const statusConfig = {
+  CONFIRMED: {
+    label: "Confirmed",
+    icon: CheckCircle2,
+    cls: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+  },
+  PENDING: {
+    label: "Pending",
+    icon: Clock,
+    cls: "bg-amber-50 text-amber-700 border border-amber-200",
+  },
+  CANCELLED: {
+    label: "Cancelled",
+    icon: XCircle,
+    cls: "bg-red-50 text-red-700 border border-red-200",
+  },
+};
 
-const lineData = [
-  { month: "Jan", registrations: 120 },
-  { month: "Feb", registrations: 210 },
-  { month: "Mar", registrations: 340 },
-  { month: "Apr", registrations: 280 },
-  { month: "May", registrations: 450 },
-  { month: "Jun", registrations: 520 },
-];
+function StatCard({ config, value, loading }) {
+  const Icon = config.icon;
 
-const recentRegistrations = [
-  {
-    name: "Arjun Kumar",
-    regdNo: "21BCE7890",
-    event: "Tech Fest 2025",
-    date: "2025-02-25",
-    status: "Confirmed",
-  },
-  {
-    name: "Priya Sharma",
-    regdNo: "22BCE4521",
-    event: "Hackathon 3.0",
-    date: "2025-02-24",
-    status: "Pending",
-  },
-  {
-    name: "Rahul Verma",
-    regdNo: "21BCE1234",
-    event: "Cultural Night",
-    date: "2025-02-24",
-    status: "Confirmed",
-  },
-  {
-    name: "Sneha Patel",
-    regdNo: "23BCE6789",
-    event: "Workshop AI/ML",
-    date: "2025-02-23",
-    status: "Confirmed",
-  },
-  {
-    name: "Vikram Singh",
-    regdNo: "22BCE3456",
-    event: "Sports Meet",
-    date: "2025-02-23",
-    status: "Pending",
-  },
-];
-
-const Dashboard = () => {
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">
-          Dashboard
-        </h2>
+    <div className="glass-card p-5 flex items-center gap-4 group hover:shadow-lg transition-all duration-300">
+      <div
+        className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${config.color} flex items-center justify-center shadow-md flex-shrink-0`}
+      >
+        <Icon className="w-7 h-7 text-white" />
+      </div>
 
-        <p className="text-sm text-muted-foreground mt-1">
-          Welcome back, Admin. Here's your overview.
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">
+          {config.label}
         </p>
+
+        {loading ? (
+          <div className="h-8 w-16 bg-muted animate-pulse rounded-lg" />
+        ) : (
+          <p className="text-3xl font-bold text-foreground tabular-nums">
+            {value !== null
+              ? config.isRevenue
+                ? `₹${Number(value).toLocaleString("en-IN")}`
+                : Number(value).toLocaleString()
+              : "—"}
+          </p>
+        )}
       </div>
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, i) => (
-          <div
-            key={stat.title}
-            className="stat-card flex items-start justify-between"
-            style={{ animationDelay: `${i * 80}ms` }}
-          >
-            <div>
-              <p className="text-sm text-muted-foreground">
-                {stat.title}
-              </p>
+      <div
+        className={`w-2 h-12 rounded-full bg-gradient-to-b ${config.color} opacity-30 group-hover:opacity-70 transition-opacity`}
+      />
+    </div>
+  );
+}
 
-              <p className="text-2xl font-bold text-foreground mt-1">
-                {stat.value}
-              </p>
+export default function Dashboard() {
+  const [stats, setStats] = useState({
+    totalStudents: null,
+    totalEvents: null,
+    totalOrganizers: null,
+    totalVolunteers: null,
+    totalRevenue: null,
+    totalBookings: null,
+  });
 
-              <div className="flex items-center gap-1 mt-2">
-                {stat.up ? (
-                  <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
-                ) : (
-                  <TrendingDown className="w-3.5 h-3.5 text-destructive" />
-                )}
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [bookings, setBookings] = useState([]);
+  const [bookingsLoading, setBookingsLoading] = useState(true);
+  const [bookingsError, setBookingsError] = useState(null);
 
-                <span
-                  className={`text-xs font-medium ${
-                    stat.up
-                      ? "text-emerald-500"
-                      : "text-destructive"
-                  }`}
-                >
-                  {stat.change}
-                </span>
+  // Load statistics
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const [
+          students,
+          events,
+          organizers,
+          volunteers,
+          revenue,
+        ] = await Promise.all([
+          getCompletedStudentsCount(),
+          getEventsCount(),
+          getOrganizersCount(),
+          getVolunteersCount(),
+          getTotalRevenue(),
+        ]);
 
-                <span className="text-xs text-muted-foreground">
-                  vs last month
-                </span>
-              </div>
-            </div>
+        setStats({
+          totalStudents: students,
+          totalEvents: events,
+          totalOrganizers: organizers,
+          totalVolunteers: volunteers,
+          totalRevenue: revenue.totalRevenue,
+          totalBookings: revenue.totalBookings,
+        });
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setStatsLoading(false);
+      }
+    };
 
-            <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
-              <stat.icon className="w-5 h-5 text-accent" />
-            </div>
-          </div>
+    loadStats();
+  }, []);
+
+  // Load bookings
+  useEffect(() => {
+    const loadBookings = async () => {
+      try {
+        const data = await getAllBookings();
+        setBookings(data || []);
+      } catch (error) {
+        console.log(error);
+        setBookingsError(error.response?.data || error.message);
+      } finally {
+        setBookingsLoading(false);
+      }
+    };
+
+    loadBookings();
+  }, []);
+
+  const recentBookings = bookings.slice(0, 8);
+
+  return (
+    <div className="space-y-8">
+
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground">Dashboard</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Welcome back, Admin. Here's your overview.
+          </p>
+        </div>
+        <div className="text-xs text-muted-foreground bg-muted px-3 py-1.5 rounded-full">
+          {new Date().toLocaleDateString("en-IN", {
+            weekday: "short",
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          })}
+        </div>
+      </div>
+
+      {/* Stat Cards — 6 cards in 3 columns */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+        {statConfig.map((config) => (
+          <StatCard
+            key={config.key}
+            config={config}
+            value={stats[config.key]}
+            loading={statsLoading}
+          />
         ))}
-      </div>
-
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="glass-card p-6">
-          <h3 className="text-sm font-semibold text-foreground mb-4">
-            Event Participation
-          </h3>
-
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={barData}>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke="hsl(220 20% 90%)"
-              />
-
-              <XAxis
-                dataKey="name"
-                tick={{
-                  fontSize: 12,
-                  fill: "hsl(220 10% 46%)",
-                }}
-              />
-
-              <YAxis
-                tick={{
-                  fontSize: 12,
-                  fill: "hsl(220 10% 46%)",
-                }}
-              />
-
-              <Tooltip
-                contentStyle={{
-                  background: "hsl(0 0% 100% / 0.9)",
-                  border: "1px solid hsl(220 20% 90%)",
-                  borderRadius: "8px",
-                  boxShadow:
-                    "0 4px 12px hsl(220 70% 25% / 0.08)",
-                }}
-              />
-
-              <Bar
-                dataKey="participants"
-                fill="hsl(220 70% 25%)"
-                radius={[6, 6, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="glass-card p-6">
-          <h3 className="text-sm font-semibold text-foreground mb-4">
-            Registrations Over Time
-          </h3>
-
-          <ResponsiveContainer width="100%" height={260}>
-            <AreaChart data={lineData}>
-              <defs>
-                <linearGradient
-                  id="colorReg"
-                  x1="0"
-                  y1="0"
-                  x2="0"
-                  y2="1"
-                >
-                  <stop
-                    offset="5%"
-                    stopColor="hsl(28 95% 55%)"
-                    stopOpacity={0.2}
-                  />
-
-                  <stop
-                    offset="95%"
-                    stopColor="hsl(28 95% 55%)"
-                    stopOpacity={0}
-                  />
-                </linearGradient>
-              </defs>
-
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke="hsl(220 20% 90%)"
-              />
-
-              <XAxis
-                dataKey="month"
-                tick={{
-                  fontSize: 12,
-                  fill: "hsl(220 10% 46%)",
-                }}
-              />
-
-              <YAxis
-                tick={{
-                  fontSize: 12,
-                  fill: "hsl(220 10% 46%)",
-                }}
-              />
-
-              <Tooltip
-                contentStyle={{
-                  background: "hsl(0 0% 100% / 0.9)",
-                  border: "1px solid hsl(220 20% 90%)",
-                  borderRadius: "8px",
-                  boxShadow:
-                    "0 4px 12px hsl(220 70% 25% / 0.08)",
-                }}
-              />
-
-              <Area
-                type="monotone"
-                dataKey="registrations"
-                stroke="hsl(28 95% 55%)"
-                fill="url(#colorReg)"
-                strokeWidth={2}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
       </div>
 
       {/* Recent Registrations */}
       <div className="glass-card overflow-hidden">
-        <div className="p-6 pb-3">
-          <h3 className="text-sm font-semibold text-foreground">
-            Recent Registrations
-          </h3>
+        <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">
+              Recent Registrations
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Latest booking activity
+            </p>
+          </div>
+          {!bookingsLoading && (
+            <span className="text-xs font-medium bg-accent/10 text-accent px-2.5 py-1 rounded-full">
+              {bookings.length} total
+            </span>
+          )}
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-t border-border">
-                <th className="text-left px-6 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Name
-                </th>
+        {bookingsLoading && (
+          <div className="flex items-center justify-center py-16 gap-3 text-muted-foreground">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span className="text-sm">Loading bookings...</span>
+          </div>
+        )}
 
-                <th className="text-left px-6 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Regd No
-                </th>
+        {bookingsError && (
+          <div className="flex items-center justify-center py-16 text-destructive text-sm gap-2">
+            <XCircle className="w-4 h-4" />
+            {bookingsError}
+          </div>
+        )}
 
-                <th className="text-left px-6 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Event
-                </th>
+        {!bookingsLoading && !bookingsError && bookings.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-2">
+            <CalendarCheck className="w-10 h-10 opacity-20" />
+            <p className="text-sm">No bookings yet</p>
+          </div>
+        )}
 
-                <th className="text-left px-6 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Date
-                </th>
-
-                <th className="text-left px-6 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Status
-                </th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {recentRegistrations.map((reg) => (
-                <tr
-                  key={reg.regdNo}
-                  className="border-t border-border hover:bg-muted/30 transition-colors"
-                >
-                  <td className="px-6 py-3 font-medium text-foreground">
-                    {reg.name}
-                  </td>
-
-                  <td className="px-6 py-3 text-muted-foreground">
-                    {reg.regdNo}
-                  </td>
-
-                  <td className="px-6 py-3 text-foreground">
-                    {reg.event}
-                  </td>
-
-                  <td className="px-6 py-3 text-muted-foreground">
-                    {reg.date}
-                  </td>
-
-                  <td className="px-6 py-3">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        reg.status === "Confirmed"
-                          ? "bg-emerald-50 text-emerald-700"
-                          : "bg-amber-50 text-amber-700"
-                      }`}
+        {!bookingsLoading && !bookingsError && bookings.length > 0 && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-muted/40">
+                  {["#", "Name", "Pass Type", "Booked At", "Status"].map((h) => (
+                    <th
+                      key={h}
+                      className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider"
                     >
-                      {reg.status}
-                    </span>
-                  </td>
+                      {h}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+
+              <tbody className="divide-y divide-border">
+                {recentBookings.map((b, i) => {
+                  const s = statusConfig[b.status] || statusConfig["PENDING"];
+                  const StatusIcon = s.icon;
+
+                  return (
+                    <tr key={b.id} className="hover:bg-muted/30 transition-colors">
+                      <td className="px-6 py-4 text-muted-foreground text-xs font-mono">
+                        {i + 1}
+                      </td>
+
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent/20 to-accent/40 flex items-center justify-center text-accent font-bold text-xs flex-shrink-0">
+                            {b.userName?.charAt(0)?.toUpperCase() ?? "?"}
+                          </div>
+                          <span className="font-medium text-foreground">
+                            {b.userName ?? "—"}
+                          </span>
+                        </div>
+                      </td>
+
+                      <td className="px-6 py-4">
+                        <span className="inline-block bg-muted text-foreground text-xs font-medium px-2.5 py-1 rounded-lg">
+                          ₹{b.passType}
+                        </span>
+                      </td>
+
+                      <td className="px-6 py-4 text-muted-foreground text-xs">
+                        {b.booking_AT
+                          ? new Date(b.booking_AT).toLocaleString("en-IN", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "—"}
+                      </td>
+
+                      <td className="px-6 py-4">
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${s.cls}`}
+                        >
+                          <StatusIcon className="w-3 h-3" />
+                          {s.label}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {!bookingsLoading && bookings.length > 8 && (
+          <div className="px-6 py-3 border-t border-border text-center">
+            <span className="text-xs text-muted-foreground">
+              Showing 8 of {bookings.length} bookings
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
-};
-
-export default Dashboard;
+}

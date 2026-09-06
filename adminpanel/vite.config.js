@@ -5,8 +5,12 @@ import path from "path"
 export default defineConfig({
   plugins: [react()],
 
+  define: {
+    global: "globalThis",   // ← add this
+  },
+
   server: {
-    port: 3000, // change to any port you want
+    port: 3000,
   },
 
   resolve: {

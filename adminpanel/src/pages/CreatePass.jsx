@@ -219,7 +219,7 @@ const CreatePass = () => {
         {/* Button */}
         <button
           type="submit"
-          className="w-full h-12 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-700 text-white font-semibold shadow-lg hover:scale-[1.01] transition-all duration-300"
+          className="w-full h-12 rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-700 text-white font-semibold shadow-lg hover:scale-[1.01] transition-all duration-300 cursor-pointer"
         >
           Create Pass
         </button>
@@ -293,7 +293,7 @@ const CreatePass = () => {
                         onClick={() =>
                           handleDelete(pass.id)
                         }
-                        className="w-10 h-10 rounded-xl bg-red-100 text-red-500 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center"
+                        className="w-10 h-10 rounded-xl bg-red-100 text-red-500 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center cursor-pointer"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>

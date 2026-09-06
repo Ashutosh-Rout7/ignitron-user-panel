@@ -1,4 +1,5 @@
 import { Routes, Route } from "react-router-dom";
+import { Toaster } from "sonner";
 
 import HomePage from "./pages/HomePage";
 import OrganizerLayout from "./pages/OrganizerLayout";
@@ -10,17 +11,21 @@ import Profile from "./pages/Profile";
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<HomePage />} />
+    <>
+      <Toaster richColors position="top-right" />
 
-      <Route path="/organizer" element={<OrganizerLayout />}>
-        <Route index element={<OrganizerDashboard />} />
-        <Route path="verify-tickets" element={<VerifyTicket />} />
-        <Route path="students" element={<Students />} />
-        <Route path="attendance" element={<Attendance />} />
-        <Route path="profile" element={<Profile />} />
-      </Route>
-    </Routes>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+
+        <Route path="/organizer" element={<OrganizerLayout />}>
+          <Route index element={<OrganizerDashboard />} />
+          <Route path="verify-tickets" element={<VerifyTicket />} />
+          <Route path="students" element={<Students />} />
+          <Route path="attendance" element={<Attendance />} />
+          <Route path="profile" element={<Profile />} />
+        </Route>
+      </Routes>
+    </>
   );
 }
 

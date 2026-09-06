@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASEURL = "http://localhost:8080";
+const BASEURL = import.meta.env.VITE_API_BASE_URL;
 
 // Event Creation API
 export const event = async (formData) => {
@@ -89,25 +89,59 @@ export const registeredStd=async()=>{
 };
 
 ////==========================================================================
-// Get all organizer requests
-export const getOrganizerRequests = async () => {
-
+// Get all volunteer requests
+export const getVolunteerRequests = async () => {
   const response = await axios.get(
-    `${BASEURL}/api/admin/organizer-requests`,
-    {
-      withCredentials: true,
-    }
+    `${BASEURL}/api/admin/volunteer-requests`,
+    { withCredentials: true }
   );
-
   return response.data;
 };
 
-// Approve organizer
-export const makeOrganizer = async (userId) => {
-
+// Approve volunteer
+export const makeVolunteer = async (userId) => {
   const response = await axios.put(
-    `${BASEURL}/api/admin/user/${userId}/make-organizer`,
-    {}, // empty request body
+    `${BASEURL}/api/admin/user/${userId}/make-volunteer`,
+    {},
+    { withCredentials: true }
+  );
+  return response.data;
+};
+
+// ✅ Admin logout — only clears admin_token (replace any existing logoutApi)
+export const logoutApi = async () => {
+  return await axios.post(
+    `${BASEURL}/api/login/admin/logout`,
+    {},
+    { withCredentials: true }
+  );
+};
+
+// fetch all approved organizers
+export const getAllOrganizers = async () => {
+  const response = await axios.get(
+    `${BASEURL}/api/admin/organizers`,
+    { withCredentials: true }
+  );
+  return response.data;
+};
+
+// fetch all approved volunteers
+export const getAllVolunteers = async () => {
+  const response = await axios.get(
+    `${BASEURL}/api/admin/volunteers`,
+    { withCredentials: true }
+  );
+  return response.data;
+};
+
+//==========================================================================
+// Dashboard APIs
+
+// Completed student profiles count
+export const getCompletedStudentsCount = async () => {
+  const response = await axios.get(
+    `${BASEURL}/api/user/completed-profiles/count`,
     {
       withCredentials: true,
     }
@@ -116,10 +150,58 @@ export const makeOrganizer = async (userId) => {
   return response.data;
 };
 
-// Admin profile — reads admin_token cookie
-export const getAdminProfile = async () => {
+// Total events count
+export const getEventsCount = async () => {
   const response = await axios.get(
-    "http://localhost:8080/api/login/admin/me",
+    `${BASEURL}/api/event/events/count`,
+    {
+      withCredentials: true,
+    }
+  );
+
+  return response.data;
+};
+
+// Total organizers count
+export const getOrganizersCount = async () => {
+  const response = await axios.get(
+    `${BASEURL}/api/organizer/organizers/count`,
+    {
+      withCredentials: true,
+    }
+  );
+
+  return response.data;
+};
+
+// Total volunteers count
+export const getVolunteersCount = async () => {
+  const response = await axios.get(
+    `${BASEURL}/api/volunteer/volunteers/count`,
+    {
+      withCredentials: true,
+    }
+  );
+
+  return response.data;
+};
+
+// Get all bookings
+export const getAllBookings = async () => {
+  const response = await axios.get(
+    `${BASEURL}/api/booking/bookings`,
+    {
+      withCredentials: true,
+    }
+  );
+
+  return response.data;
+};
+
+// Total revenue
+export const getTotalRevenue = async () => {
+  const response = await axios.get(
+    `${BASEURL}/api/admin/revenue`,
     { withCredentials: true }
   );
   return response.data;

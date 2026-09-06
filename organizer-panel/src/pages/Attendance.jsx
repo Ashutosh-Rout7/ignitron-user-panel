@@ -1,7 +1,16 @@
-import React, { useState } from "react";
-import { Save, User, Hash,GraduationCap, Calendar, Percent, Loader2,} from "lucide-react";
+import React, { useState, useEffect } from "react";
+import {
+  Save,
+  User,
+  Hash,
+  GraduationCap,
+  Calendar,
+  Percent,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { saveAttendance, getAllAttendance } from "../services/AllServices";
 
 function FloatingInput({
   id,
@@ -16,7 +25,6 @@ function FloatingInput({
     <div className="relative">
       <div className="relative">
         <Icon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-
         <input
           id={id}
           type={type}
@@ -27,7 +35,6 @@ function FloatingInput({
             error ? "border-red-500" : "border-input"
           }`}
         />
-
         <label
           htmlFor={id}
           className="pointer-events-none absolute left-10 top-2 text-[11px] font-medium text-muted-foreground transition-all peer-placeholder-shown:top-4 peer-placeholder-shown:text-sm peer-focus:top-2 peer-focus:text-[11px] peer-focus:text-orange"
@@ -36,11 +43,7 @@ function FloatingInput({
         </label>
       </div>
 
-      {error && (
-        <p className="mt-1.5 text-xs font-medium text-red-500">
-          {error}
-        </p>
-      )}
+      {error && <p className="mt-1.5 text-xs font-medium text-red-500">{error}</p>}
     </div>
   );
 }
@@ -55,37 +58,36 @@ export default function Attendance() {
   });
 
   const [errors, setErrors] = useState({});
-
   const [saving, setSaving] = useState(false);
 
-  const att = Number(form.attendance) || 0;
+  // NEW: attendance list
+  const [attendanceList, setAttendanceList] = useState([]);
+  const [loadingList, setLoadingList] = useState(false);
 
+  const att = Number(form.attendance) || 0;
   const pct = Math.max(0, Math.min(100, att));
 
+  const clickSound = new Audio("/sound/click.mp3");
+
+  // ---------------- VALIDATION ----------------
   const validate = () => {
     const e = {};
-
     if (!form.name.trim()) e.name = "Name is required";
-
-    if (!form.regd.trim())
-      e.regd = "Registration number is required";
-
-    if (!form.dept.trim())
-      e.dept = "Department is required";
-
-    if (!form.year.trim())
-      e.year = "Year is required";
-
-    if (!form.attendance.trim())
-      e.attendance = "Attendance is required";
+    if (!form.regd.trim()) e.regd = "Registration number is required";
+    if (!form.dept.trim()) e.dept = "Department is required";
+    if (!form.year.trim()) e.year = "Year is required";
+    if (!form.attendance.trim()) e.attendance = "Attendance is required";
     else if (att < 0 || att > 100)
       e.attendance = "Must be between 0 and 100";
 
     setErrors(e);
-
     return Object.keys(e).length === 0;
   };
 
+  const resetForm = () =>
+    setForm({ name: "", regd: "", dept: "", year: "", attendance: "" });
+
+  // ---------------- SAVE ATTENDANCE (UNCHANGED LOGIC) ----------------
   const onSave = async () => {
     if (!validate()) {
       toast.error("Please fix the highlighted fields");
@@ -94,35 +96,64 @@ export default function Attendance() {
 
     setSaving(true);
 
-    await new Promise((r) => setTimeout(r, 900));
+    try {
+      await saveAttendance({
+        regdNo: form.regd,
+        userName: form.name,
+        department: form.dept,
+        year: form.year,
+        attendancePercentage: pct,
+      });
 
-    setSaving(false);
+      clickSound.play();
 
-    toast.success("Attendance saved successfully", {
-      description: `${form.name} · ${pct}%`,
-    });
+      toast.success("Attendance saved successfully", {
+        description: `${form.name} · ${pct}%`,
+      });
 
-    setForm({
-      name: "",
-      regd: "",
-      dept: "",
-      year: "",
-      attendance: "",
-    });
+      resetForm();
+
+      // refresh list after save
+      fetchAttendance();
+    } catch (error) {
+      console.log(error);
+      toast.error("Failed to save attendance");
+    } finally {
+      setSaving(false);
+    }
   };
 
+  // ---------------- FETCH ALL ATTENDANCE (NEW) ----------------
+  const fetchAttendance = async () => {
+    setLoadingList(true);
+    try {
+      const data = await getAllAttendance();
+      setAttendanceList(data);
+    } catch (err) {
+      console.log(err);
+      toast.error("Failed to load attendance");
+    } finally {
+      setLoadingList(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAttendance();
+  }, []);
+
+  // ---------------- UI ----------------
   return (
     <div className="mx-auto max-w-4xl space-y-6 animate-fade-in">
       <header>
         <h1 className="text-3xl font-bold tracking-tight text-navy">
           Add / Update Student Attendance
         </h1>
-
         <p className="mt-1 text-sm text-muted-foreground">
           Record or update attendance percentage for a registered student.
         </p>
       </header>
 
+      {/* FORM */}
       <div className="rounded-3xl border border-border bg-card p-6 shadow-card md:p-8">
         <div className="grid gap-5 md:grid-cols-2">
           <FloatingInput
@@ -130,9 +161,7 @@ export default function Attendance() {
             label="Student Name"
             icon={User}
             value={form.name}
-            onChange={(v) =>
-              setForm({ ...form, name: v })
-            }
+            onChange={(v) => setForm({ ...form, name: v })}
             error={errors.name}
           />
 
@@ -141,12 +170,7 @@ export default function Attendance() {
             label="Registration Number"
             icon={Hash}
             value={form.regd}
-            onChange={(v) =>
-              setForm({
-                ...form,
-                regd: v.toUpperCase(),
-              })
-            }
+            onChange={(v) => setForm({ ...form, regd: v.toUpperCase() })}
             error={errors.regd}
           />
 
@@ -155,9 +179,7 @@ export default function Attendance() {
             label="Department"
             icon={GraduationCap}
             value={form.dept}
-            onChange={(v) =>
-              setForm({ ...form, dept: v })
-            }
+            onChange={(v) => setForm({ ...form, dept: v })}
             error={errors.dept}
           />
 
@@ -166,9 +188,7 @@ export default function Attendance() {
             label="Year"
             icon={Calendar}
             value={form.year}
-            onChange={(v) =>
-              setForm({ ...form, year: v })
-            }
+            onChange={(v) => setForm({ ...form, year: v })}
             error={errors.year}
           />
 
@@ -178,25 +198,20 @@ export default function Attendance() {
               label="Attendance Percentage"
               icon={Percent}
               value={form.attendance}
-              onChange={(v) =>
-                setForm({
-                  ...form,
-                  attendance: v,
-                })
-              }
+              onChange={(v) => setForm({ ...form, attendance: v })}
               type="number"
               error={errors.attendance}
             />
           </div>
         </div>
 
+        {/* PREVIEW */}
         <div className="mt-6 rounded-2xl border border-border bg-muted/40 p-5">
           <div className="flex items-center justify-between">
             <div>
               <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Attendance Preview
               </div>
-
               <div className="mt-1 text-2xl font-bold text-navy">
                 {pct}
                 <span className="text-base font-medium text-muted-foreground">
@@ -236,20 +251,9 @@ export default function Attendance() {
           </div>
         </div>
 
+        {/* ACTIONS */}
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <Button
-            variant="outline"
-            className="rounded-full"
-            onClick={() =>
-              setForm({
-                name: "",
-                regd: "",
-                dept: "",
-                year: "",
-                attendance: "",
-              })
-            }
-          >
+          <Button variant="outline" className="rounded-full" onClick={resetForm}>
             Reset
           </Button>
 
@@ -273,7 +277,40 @@ export default function Attendance() {
           </Button>
         </div>
       </div>
+
+      {/* ATTENDANCE LIST */}
+      <div className="rounded-3xl border bg-card p-6 shadow-card">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold">All Attendance</h2>
+        </div>
+
+        {loadingList ? (
+          <p className="mt-4 text-sm text-muted-foreground">Loading...</p>
+        ) : (
+          <div className="mt-4 space-y-3">
+            {attendanceList.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No attendance records found.
+              </p>
+            ) : (
+              attendanceList.map((item, index) => (
+                <div
+                  key={index}
+                  className="rounded-xl border p-4 hover:bg-muted/30"
+                >
+                  <p className="font-semibold">{item.userName}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {item.regdNo} • {item.department} • {item.year}
+                  </p>
+                  <p className="text-sm font-medium">
+                    Attendance: {item.attendancePercentage}%
+                  </p>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
-
