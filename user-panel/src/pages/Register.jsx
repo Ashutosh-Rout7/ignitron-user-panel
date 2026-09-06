@@ -5,17 +5,19 @@ import { AuthShell } from "../components/ui/AuthShell";
 import { FormField } from "../components/ui/FormField";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { register } from "../services/AllServices";
+import { Eye, EyeOff } from "lucide-react";
 
 function Register() {
 
    //audio setting
-  const clickSound = new Audio("/sound/cong.mp3");
+  const clickSound = new Audio("/sound/thank.mp3");
   const navigate = useNavigate();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -99,12 +101,21 @@ function Register() {
 
         <FormField
           label="Password"
-          type="password"
+          type={showPassword ? "text" : "password"}
           placeholder="Min 8 characters"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-        />
+          rightIcon={
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="text-gray-500 hover:text-gray-300"
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+          }
+       />
 
         <PrimaryButton
           type="submit"

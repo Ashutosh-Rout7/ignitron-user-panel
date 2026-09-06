@@ -4,37 +4,55 @@ import { useState } from "react";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { useApp } from "../lib/app-store";
 import { toast } from "sonner";
-import { bookingapi, createPayment } from "../services/AllServices";
+import { bookingapi, createPayment, getMyBooking } from "../services/AllServices";
 
 function Payment() {
-  const { resolvedPass, selectedEventIds, confirmPayment, paid } = useApp();
+  const { resolvedPass, selectedEventIds, paid } = useApp();
   const navigate = useNavigate();
   const [processing, setProcessing] = useState(false);
-  const [success] = useState(paid);
 
- async function onPay() {
-  try {
-    setProcessing(true);
-    await bookingapi(selectedEventIds);
-    const res = await createPayment();
-    // DELETE this line ↓
-    // confirmPayment();
-    window.location.href = res.payment_link_url;
+  async function onPay() {
+    try {
+      setProcessing(true);
 
-  } catch (err) {
-    console.error("Payment failed:", err);
-    // ← show specific message
-    if (err.response?.data?.message?.includes("already made a booking")) {
-      toast.error("You have already booked. Check My Registrations.");
-    } else {
-      toast.error("Payment failed. Please try again.");
-    }
-  } finally {
-    setProcessing(false);
+      // ✅ Check if booking already exists (student came back from Stripe)
+      let existingBooking = null;
+      try {
+        existingBooking = await getMyBooking();
+      } catch (_) {}
+
+      if (existingBooking?.status === "CONFIRMED") {
+        // Already paid — just send them to registrations
+        navigate("/my-registrations");
+        return;
+      }
+
+      // ✅ Only call bookingapi if no booking exists yet
+      if (!existingBooking) {
+        await bookingapi(selectedEventIds);
+      }
+      // if existingBooking.status === "PENDING" → skip bookingapi, go straight to payment
+
+      const res = await createPayment();
+      window.location.href = res.payment_link_url;
+
+    } catch (err) {
+  console.error("Payment failed:", err);
+  const msg = err.response?.data;
+  if (typeof msg === "string" && msg.includes("Attendance below 50%")) {
+    toast.error("You are not eligible to book. Attendance below 50%.");
+  } else if (typeof msg === "string" && msg.includes("already made a booking")) {
+    toast.error("You have already booked. Check My Registrations.");
+  } else {
+    toast.error("Payment failed. Please try again.");
   }
-}
+} finally {
+      setProcessing(false);
+    }
+  }
 
-  if (success) {
+  // ✅ If already paid (from context), redirect to registrations
+  if (paid) {
     return (
       <div className="grid min-h-[calc(100vh-4rem)] place-items-center px-4 py-16 text-center">
         <div className="relative w-full max-w-lg overflow-hidden rounded-3xl glass-strong p-10 shadow-glow">
@@ -42,10 +60,10 @@ function Payment() {
             🎉
           </span>
           <h1 className="mt-6 text-3xl font-semibold tracking-tight">
-            Booking Confirmed!
+            Already Booked!
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Welcome to Ignitron 2027. Your digital pass is now in your account.
+            You have already completed your booking for Ignitron 2027.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Link

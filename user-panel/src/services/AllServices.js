@@ -1,9 +1,26 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:8080",
+  baseURL: import.meta.env.VITE_API_BASE_URL,
   withCredentials: true,
 });
+
+
+
+API.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (
+      error.response?.status === 401 &&
+      error.config?.url !== "/api/login"
+    ) {
+      localStorage.removeItem("ignitron-app-state-v1");
+       window.location.href = "/login";
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 // register api
 export const register = async (data) => {
@@ -41,9 +58,8 @@ export const profileupdate = async (profiledata, file) => {
   }
 };
 
-// logout api
 export const logoutApi = async () => {
-  return await API.post("/api/login/logout");
+  return await API.post("/api/login/user/logout");
 };
 
 // get loggedin user
@@ -82,11 +98,12 @@ export const createPayment = async () => {
   return response.data;
 };
 
-// verify payment
+// In AllServices.js — make sure verifyPayment calls correct URL
 export const verifyPayment = async (orderId) => {
-  const response = await API.get(`/api/payment/payment-success/${orderId}`);
-  return response.data;
+    const res = await API.get(`/api/payment/payment-success?orderId=${orderId}`);
+    return res.data;
 };
+
 
 // download ticket
 export const downloadTicket = async () => {
@@ -117,5 +134,16 @@ export const requestOrganizerApi = async () => {
 // request volunteer  ← NEW
 export const requestVolunteerApi = async () => {
   const response = await API.post("/api/user/request-volunteer");
+  return response.data;
+};
+
+// AI RAG query (Axios version)
+export const askIgnitronAI = async (question) => {
+  const response = await API.get("/ai/generate", {
+    params: {
+      userprompt: question,
+    },
+  });
+
   return response.data;
 };

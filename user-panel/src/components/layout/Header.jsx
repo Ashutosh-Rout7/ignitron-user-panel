@@ -9,6 +9,9 @@ import { useApp } from "@/lib/app-store";
 import { cn } from "@/lib/utils";
 import { logoutApi } from "../../services/AllServices";
 
+const ORGANIZER_PANEL_URL = import.meta.env.VITE_ORGANIZER_PANEL_URL;
+const VOLUNTEER_PANEL_URL = import.meta.env.VITE_VOLUNTEER_PANEL_URL;
+
 const navItems = [
   { label: "Home", to: "/" },
   { label: "Events", to: "/events" },
@@ -35,15 +38,14 @@ export function Header() {
   const [orgModal, setOrgModal] = useState(false);
   const [volModal, setVolModal] = useState(false);
   const [toast, setToast] = useState(null);
-
-  // When approval fires, store the role label here.
-  // The JSX uses this to render a full-page blur overlay.
-  const [approvedRole, setApprovedRole] = useState(null); // "Organizer" | "Volunteer" | null
+  const [approvedRole, setApprovedRole] = useState(null);
 
   const navigate = useNavigate();
   const isGuest = role === "guest";
-
   const handleLogoutRef = useRef(null);
+
+  // Show role buttons for any logged-in non-admin user
+  const showRoleButtons = !isGuest && role !== "admin" && user?.profileComplete;
 
   function showToast(msg) {
     setToast(msg);
@@ -68,10 +70,8 @@ export function Header() {
   // ---------------- LISTEN FOR APPROVAL EVENTS ----------------
   useEffect(() => {
     const handleOrgApproved = () => {
-      // 1. Clear all state + localStorage RIGHT NOW before any re-render
       localStorage.removeItem("ignitron-app-state-v1");
       logout();
-      // 2. Show blur overlay with the role name
       setApprovedRole("Organizer");
     };
 
@@ -87,7 +87,7 @@ export function Header() {
       window.removeEventListener("organizer-approved", handleOrgApproved);
       window.removeEventListener("volunteer-approved", handleVolApproved);
     };
-  }, []);
+  }, [logout]);
 
   async function handleOrgRequest() {
     try {
@@ -116,98 +116,100 @@ export function Header() {
     }
   }
 
+  // ← Reusable role buttons JSX (used in both desktop + mobile)
+  const RoleButtons = ({ mobile = false }) => (
+    <>
+      {/* Organizer Button */}
+      {organizerApproved ? (
+        <a
+          href={ORGANIZER_PANEL_URL}
+          className={mobile
+            ? "rounded-lg border border-white/10 px-3 py-2 text-sm hover:bg-white/5 block text-center"
+            : "rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-foreground transition hover:bg-white/10"
+          }
+        >
+          Switch To Organizer Panel
+        </a>
+      ) : (
+        <button
+          onClick={() => { if (mobile) setMobileOpen(false); setOrgModal(true); }}
+          disabled={organizerRequested}
+          className={mobile
+            ? "rounded-lg border border-white/10 px-3 py-2 text-sm text-left disabled:opacity-60 hover:bg-white/5"
+            : "rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-foreground transition hover:bg-white/10 disabled:opacity-60"
+          }
+        >
+          {organizerRequested ? "Organizer Requested ⏳" : "Become Organizer"}
+        </button>
+      )}
+
+      {/* Volunteer Button */}
+      {volunteerApproved ? (
+        <a
+          href={VOLUNTEER_PANEL_URL}
+          className={mobile
+            ? "rounded-lg border border-white/10 px-3 py-2 text-sm hover:bg-white/5 block text-center"
+            : "rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-foreground transition hover:bg-white/10"
+          }
+        >
+          Switch To Volunteer Panel
+        </a>
+      ) : (
+        <button
+          onClick={() => { if (mobile) setMobileOpen(false); setVolModal(true); }}
+          disabled={volunteerRequested}
+          className={mobile
+            ? "rounded-lg border border-white/10 px-3 py-2 text-sm text-left disabled:opacity-60 hover:bg-white/5"
+            : "rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-foreground transition hover:bg-white/10 disabled:opacity-60"
+          }
+        >
+          {volunteerRequested ? "Volunteer Requested ⏳" : "Become Volunteer"}
+        </button>
+      )}
+    </>
+  );
+
   return (
     <>
       {/* ---- APPROVAL BLUR OVERLAY ---- */}
-      {/* Sits on top of the ENTIRE page. The page behind is blurred and
-          non-interactive. User must click "Login Now" to proceed.
-          We do NOT auto-navigate — that was causing the flash because
-          navigate() triggered re-renders before state was fully cleared. */}
       {approvedRole && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 9999,
-            backdropFilter: "blur(12px)",
-            WebkitBackdropFilter: "blur(12px)",
-            backgroundColor: "rgba(0,0,0,0.6)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <div
-            style={{
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              borderRadius: "1rem",
-              padding: "2.5rem 2rem",
-              maxWidth: "380px",
-              width: "90%",
-              textAlign: "center",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: "1rem",
-            }}
-          >
-            <div
-              style={{
-                width: 64,
-                height: 64,
-                borderRadius: "50%",
-                background: "rgba(34,197,94,0.15)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "2rem",
-              }}
-            >
-              🎉
-            </div>
-            <h2
-              style={{
-                fontSize: "1.25rem",
-                fontWeight: 600,
-                color: "#fff",
-                margin: 0,
-              }}
-            >
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 9999,
+          backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+          backgroundColor: "rgba(0,0,0,0.6)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <div style={{
+            background: "rgba(255,255,255,0.05)",
+            border: "1px solid rgba(255,255,255,0.12)",
+            borderRadius: "1rem", padding: "2.5rem 2rem",
+            maxWidth: "380px", width: "90%", textAlign: "center",
+            display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem",
+          }}>
+            <div style={{
+              width: 64, height: 64, borderRadius: "50%",
+              background: "rgba(34,197,94,0.15)",
+              display: "flex", alignItems: "center", justifyContent: "center", fontSize: "2rem",
+            }}>🎉</div>
+            <h2 style={{ fontSize: "1.25rem", fontWeight: 600, color: "#fff", margin: 0 }}>
               You are now an {approvedRole}!
             </h2>
-            <p
-              style={{
-                fontSize: "0.9rem",
-                color: "rgba(255,255,255,0.6)",
-                margin: 0,
-                lineHeight: 1.6,
-              }}
-            >
-              Your role has been approved. Please login again to access your{" "}
-              {approvedRole} panel.
+            <p style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.6)", margin: 0, lineHeight: 1.6 }}>
+              Your role has been approved. Please login again to access your {approvedRole} panel.
             </p>
-           // Find this button in Header.jsx (~line 120)
             <button
               onClick={() => {
-                setApprovedRole(null); // ✅ ADD THIS LINE
+                setApprovedRole(null);
                 navigate("/login", {
-                  state: {
-                    message: `You are now an ${approvedRole}. Please login again to access your ${approvedRole} panel.`,
-                  },
+                  state: { message: `You are now an ${approvedRole}. Please login again.` },
                 });
               }}
               style={{
-                marginTop: "0.5rem",
-                padding: "0.6rem 2rem",
+                marginTop: "0.5rem", padding: "0.6rem 2rem",
                 borderRadius: "999px",
                 background: "linear-gradient(135deg, #f97316, #a855f7)",
-                color: "#fff",
-                fontWeight: 600,
-                fontSize: "0.9rem",
-                border: "none",
-                cursor: "pointer",
-                width: "100%",
+                color: "#fff", fontWeight: 600, fontSize: "0.9rem",
+                border: "none", cursor: "pointer", width: "100%",
               }}
             >
               Login Now
@@ -230,9 +232,7 @@ export function Header() {
                   to={item.to}
                   className={cn(
                     "rounded-full px-4 py-2 text-sm font-medium transition",
-                    active
-                      ? "bg-white/10 text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
+                    active ? "bg-white/10 text-foreground" : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   {item.label}
@@ -245,16 +245,10 @@ export function Header() {
           <div className="hidden items-center gap-2 md:flex">
             {isGuest ? (
               <>
-                <Link
-                  to="/login"
-                  className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
-                >
+                <Link to="/login" className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition hover:text-foreground">
                   Login
                 </Link>
-                <Link
-                  to="/register"
-                  className="rounded-full bg-gradient-brand px-4 py-2 text-sm font-semibold text-primary-foreground shadow-glow transition hover:opacity-90"
-                >
+                <Link to="/register" className="rounded-full bg-gradient-brand px-4 py-2 text-sm font-semibold text-primary-foreground shadow-glow transition hover:opacity-90">
                   Register
                 </Link>
               </>
@@ -262,75 +256,32 @@ export function Header() {
               <>
                 <NotificationDropdown />
 
-                {role === "student" && (
-                  <>
-                    {organizerApproved ? (
-                      <a
-                        href="http://localhost:3001"
-                        className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-foreground transition hover:bg-white/10"
-                      >
-                        Switch To Organizer Panel
-                      </a>
-                    ) : (
-                      <button
-                        onClick={() => setOrgModal(true)}
-                        disabled={organizerRequested}
-                        className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-foreground transition hover:bg-white/10 disabled:opacity-60"
-                      >
-                        {organizerRequested ? "Organizer Requested ⏳" : "Become Organizer"}
-                      </button>
-                    )}
-
-                    {volunteerApproved ? (
-                      <a
-                        href="http://localhost:3003"
-                        className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-foreground transition hover:bg-white/10"
-                      >
-                        Switch To Volunteer Panel
-                      </a>
-                    ) : (
-                      <button
-                        onClick={() => setVolModal(true)}
-                        disabled={volunteerRequested}
-                        className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-foreground transition hover:bg-white/10 disabled:opacity-60"
-                      >
-                        {volunteerRequested ? "Volunteer Requested ⏳" : "Become Volunteer"}
-                      </button>
-                    )}
-                  </>
-                )}
-
-                {role === "organizer" && (
-                  <a
-                    href="http://localhost:3001"
-                    className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-foreground transition hover:bg-white/10"
-                  >
-                    Switch To Organizer Panel
-                  </a>
-                )}
-
-                {role === "volunteer" && (
-                  <a
-                    href="http://localhost:3003"
-                    className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-foreground transition hover:bg-white/10"
-                  >
-                    Switch To Volunteer Panel
-                  </a>
-                )}
+                {/* ← Always show for logged-in users with complete profile */}
+                {showRoleButtons
+                  ? <RoleButtons />
+                  : !isGuest && role !== "admin" && (
+                      <span className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs text-muted-foreground">
+                        Complete profile to apply
+                      </span>
+                    )
+                }
 
                 <ProfileDropdown />
               </>
             )}
           </div>
 
-          {/* MOBILE HAMBURGER */}
-          <button
-            className="grid h-10 w-10 place-items-center rounded-full glass md:hidden"
-            onClick={() => setMobileOpen((v) => !v)}
-            aria-label="Toggle menu"
-          >
-            {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-          </button>
+          {/* MOBILE HAMBURGER + BELL */}
+          <div className="flex items-center gap-2 md:hidden">
+            {!isGuest && <NotificationDropdown />}
+            <button
+              className="grid h-10 w-10 place-items-center rounded-full glass"
+              onClick={() => setMobileOpen((v) => !v)}
+              aria-label="Toggle menu"
+            >
+              {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </button>
+          </div>
         </div>
 
         {/* MOBILE MENU */}
@@ -390,61 +341,15 @@ export function Header() {
                     My Registrations
                   </Link>
 
-                  {role === "student" && (
-                    <>
-                      {organizerApproved ? (
-                        <a
-                          href="http://localhost:3001"
-                          className="rounded-lg border border-white/10 px-3 py-2 text-sm hover:bg-white/5"
-                        >
-                          Switch To Organizer Panel
-                        </a>
-                      ) : (
-                        <button
-                          onClick={() => { setMobileOpen(false); setOrgModal(true); }}
-                          disabled={organizerRequested}
-                          className="rounded-lg border border-white/10 px-3 py-2 text-sm text-left disabled:opacity-60 hover:bg-white/5"
-                        >
-                          {organizerRequested ? "Organizer Requested ⏳" : "Become Organizer"}
-                        </button>
-                      )}
-
-                      {volunteerApproved ? (
-                        <a
-                          href="http://localhost:3003"
-                          className="rounded-lg border border-white/10 px-3 py-2 text-sm hover:bg-white/5"
-                        >
-                          Switch To Volunteer Panel
-                        </a>
-                      ) : (
-                        <button
-                          onClick={() => { setMobileOpen(false); setVolModal(true); }}
-                          disabled={volunteerRequested}
-                          className="rounded-lg border border-white/10 px-3 py-2 text-sm text-left disabled:opacity-60 hover:bg-white/5"
-                        >
-                          {volunteerRequested ? "Volunteer Requested ⏳" : "Become Volunteer"}
-                        </button>
-                      )}
-                    </>
-                  )}
-
-                  {role === "organizer" && (
-                    <a
-                      href="http://localhost:3001"
-                      className="rounded-lg border border-white/10 px-3 py-2 text-sm hover:bg-white/5"
-                    >
-                      Switch To Organizer Panel
-                    </a>
-                  )}
-
-                  {role === "volunteer" && (
-                    <a
-                      href="http://localhost:3003"
-                      className="rounded-lg border border-white/10 px-3 py-2 text-sm hover:bg-white/5"
-                    >
-                      Switch To Volunteer Panel
-                    </a>
-                  )}
+                  {/* ← Always show role buttons in mobile too */}
+                  {showRoleButtons
+                    ? <RoleButtons mobile={true} />
+                    : role !== "admin" && (
+                        <div className="rounded-lg border border-white/10 px-3 py-2 text-sm text-muted-foreground">
+                          Complete profile to apply for roles
+                        </div>
+                      )
+                  }
 
                   <div className="h-px bg-white/5" />
 
@@ -481,7 +386,6 @@ export function Header() {
         onConfirm={handleVolRequest}
       />
 
-      {/* TOAST */}
       {toast && (
         <div className="fixed bottom-6 left-1/2 z-[200] -translate-x-1/2 rounded-full glass-strong px-5 py-3 text-sm shadow-glow animate-in fade-in slide-in-from-bottom-4">
           {toast}

@@ -6,9 +6,21 @@ import {
 
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { useApp } from "../lib/app-store";
+import { toast } from "sonner";
+import { useEffect } from "react";  // ← add this
+ import { getallEvents } from "../services/AllServices";
 
 function BookingConfirmation() {
-  const {resolvedPass,selectedEventIds,allEvents,} = useApp();
+  const { resolvedPass, selectedEventIds, allEvents, setAllEvents } = useApp();
+ 
+// Fetch events if not loaded yet
+useEffect(() => {
+  if (allEvents.length === 0) {
+    getallEvents()
+      .then((data) => setAllEvents(data || []))
+      .catch(() => {});
+  }
+}, []);
 
   console.log(allEvents)
 
@@ -134,9 +146,11 @@ function BookingConfirmation() {
       </div>
 
       <div className="mt-8 flex justify-end">
-        <PrimaryButton
-          onClick={() => navigate("/payment")}
-        >
+       <PrimaryButton
+        onClick={() => {
+          navigate("/payment");
+        }}
+      >
           Confirm booking
           <ArrowRight className="h-4 w-4" />
         </PrimaryButton>

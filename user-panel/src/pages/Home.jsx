@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { PageHero } from "../components/ui/PageHero";
 import { useApp } from "../lib/app-store";
+import { askIgnitronAI } from "../services/AllServices";
 
 function Home() {
   const { role } = useApp();
@@ -58,32 +59,17 @@ function Home() {
     setAiLoading(true);
 
     try {
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          system: `You are Ignitron AI, the official assistant for Ignitron 2K27 — the annual college fest of Ajay Binay Institute of Technology, Cuttack.
+      const reply = await askIgnitronAI(userMsg);
 
-You help students with:
-- Event information (sports, cultural, technical, hackathons)
-- Pass details (₹300 standard — 4 events, ₹500 premium — 6 events)
-- Registration process (register → complete profile → select pass → choose events → pay)
-- Schedule (Feb 14-16, 2027)
-- Prize pool (₹5 Lakhs total)
-- Attendance requirement (minimum 50% to be eligible for booking)
-
-Keep answers short, friendly and helpful. If you don't know something specific, say so politely.`,
-          messages: [{ role: "user", content: userMsg }],
-        }),
-      });
-
-      const data = await response.json();
-      const reply = data.content?.[0]?.text || "Sorry, I couldn't get a response.";
-      setMessages((prev) => [...prev, { role: "ai", text: reply }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", text: reply },
+      ]);
     } catch (err) {
-      setMessages((prev) => [...prev, { role: "ai", text: "Something went wrong. Please try again." }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", text: "Something went wrong. Please try again." },
+      ]);
     } finally {
       setAiLoading(false);
     }
@@ -94,6 +80,9 @@ Keep answers short, friendly and helpful. If you don't know something specific, 
       {/* ── HERO ─────────────────────────────────────────────────────── */}
       <PageHero
         eyebrow="Ignitron 2027 · Feb 14 — 16"
+        videoSrc="/videos/hero.mp4"
+        mobileVideoSrc="/videos/hero-mobile.mp4"
+        posterSrc="/videos/hero-poster.jpg"
         title={
           <>
             The flagship fest for{" "}
@@ -184,7 +173,6 @@ Keep answers short, friendly and helpful. If you don't know something specific, 
           <div className="absolute -right-20 top-1/2 h-64 w-64 -translate-y-1/2 rounded-full bg-[color:var(--ignitron-orange)] opacity-20 blur-3xl" />
 
           <div className="relative flex flex-col gap-8">
-
             {/* header */}
             <div className="flex items-center gap-4">
               <div className="relative grid h-14 w-14 flex-shrink-0 place-items-center rounded-2xl bg-gradient-brand shadow-glow">

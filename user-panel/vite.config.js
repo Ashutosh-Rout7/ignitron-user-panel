@@ -7,10 +7,14 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    
   ],
-      server: {
-    port: 3002, // change to any port you want
+
+  define: {
+    global: "globalThis",  // ← add this
+  },
+
+  server: {
+    port: 3002,
   },
   resolve: {
     alias: {

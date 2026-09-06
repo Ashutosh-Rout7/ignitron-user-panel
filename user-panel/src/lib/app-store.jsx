@@ -1,32 +1,20 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import {createContext,useContext,useEffect,useMemo,useState} from "react";
 
-import {
-  getpass,
-  getProfile,
-  getMyBooking,
-  requestOrganizerApi,
-  requestVolunteerApi,
-} from "../services/AllServices";
+import {getpass,getProfile,getMyBooking,requestOrganizerApi,requestVolunteerApi, getallEvents} from "../services/AllServices";
+import { Client } from "@stomp/stompjs";
+import SockJS from "sockjs-client";
+import axios from "axios";
+
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const AppCtx = createContext(null);
 const STORAGE_KEY = "ignitron-app-state-v1";
 
-const seedNotifications = [
-  {
-    id: "n1",
-    type: "announcement",
-    title: "Ignitron 2027 is live",
-    description: "Early-bird passes are now open. Grab them before they're gone.",
-    timestamp: "2m ago",
-    read: false,
-  },
-];
+const playSound = () => {
+  const audio = new Audio("/notification.mp3");
+  audio.volume = 1.0;
+  audio.play().catch(() => {});
+};
 
 export function AppProvider({ children }) {
   const [role, setRole] = useState("guest");
@@ -36,13 +24,25 @@ export function AppProvider({ children }) {
   const [allPasses, setAllPasses] = useState([]);
   const [selectedEventIds, setSelected] = useState([]);
   const [paid, setPaid] = useState(false);
-  const [notifications, setNotifications] = useState(seedNotifications);
+  const [notifications, setNotifications] = useState([]);
   const [hydrated, setHydrated] = useState(false);
 
   const [organizerRequested, setOrganizerRequested] = useState(false);
   const [volunteerRequested, setVolunteerRequested] = useState(false);
   const [organizerApproved, setOrganizerApproved] = useState(false);
   const [volunteerApproved, setVolunteerApproved] = useState(false);
+
+  // ---------------- UNLOCK AUDIO ----------------
+  useEffect(() => {
+    const unlock = () => {
+      const audio = new Audio("/notification.mp3");
+      audio.volume = 0;
+      audio.play().then(() => audio.pause()).catch(() => {});
+      document.removeEventListener("click", unlock);
+    };
+    document.addEventListener("click", unlock);
+    return () => document.removeEventListener("click", unlock);
+  }, []);
 
   // ---------------- LOAD PASSES ----------------
   useEffect(() => {
@@ -52,6 +52,15 @@ export function AppProvider({ children }) {
       .catch(() => {});
   }, [user]);
 
+
+  // ---------------- LOAD ALL EVENTS ----------------
+useEffect(() => {
+  if (!user) return;
+  getallEvents()
+    .then((data) => setAllEvents(data || []))
+    .catch(() => {});
+}, [user?.id]);
+
   // ---------------- SYNC FULL PROFILE ----------------
   useEffect(() => {
     if (!user) return;
@@ -60,6 +69,10 @@ export function AppProvider({ children }) {
         if (fullUser.id === user.id || fullUser._id === user._id) {
           setUser(fullUser);
           setPassState(fullUser.passId || null);
+          // ← sync roles on profile fetch too
+          const roles = fullUser.roles || [];
+          setOrganizerApproved(roles.includes("ORGANIZER"));
+          setVolunteerApproved(roles.includes("VOLUNTEER"));
         }
       })
       .catch(() => {});
@@ -68,22 +81,22 @@ export function AppProvider({ children }) {
   // ---------------- REFETCH ON TAB FOCUS ----------------
   useEffect(() => {
     if (!user) return;
-
     const handleFocus = async () => {
       try {
         const fullUser = await getProfile();
         if (fullUser.id === user.id || fullUser._id === user._id) {
           setUser(fullUser);
+          const roles = fullUser.roles || [];
+          setOrganizerApproved(roles.includes("ORGANIZER"));
+          setVolunteerApproved(roles.includes("VOLUNTEER"));
         }
       } catch (e) {}
     };
-
     window.addEventListener("focus", handleFocus);
     return () => window.removeEventListener("focus", handleFocus);
   }, [user?.id]);
 
   // ---------------- SYNC BOOKING STATE ----------------
-  // ✅ paid is NEVER stored in localStorage — always derived from backend
   useEffect(() => {
     if (!user) return;
     getMyBooking()
@@ -95,9 +108,7 @@ export function AppProvider({ children }) {
           setPaid(false);
         }
       })
-      .catch(() => {
-        setPaid(false);
-      });
+      .catch(() => { setPaid(false); });
   }, [user?.id]);
 
   // ---------------- SYNC ROLES ----------------
@@ -114,46 +125,87 @@ export function AppProvider({ children }) {
   useEffect(() => {
     if (!user) return;
     if (!organizerRequested && !volunteerRequested) return;
-
     const currentUserId = user.id || user._id;
-
     const interval = setInterval(async () => {
       try {
         const freshUser = await getProfile();
         const freshId = freshUser.id || freshUser._id;
         if (freshId !== currentUserId) return;
-
         const roles = freshUser.roles || [];
-
         if (organizerRequested && roles.includes("ORGANIZER")) {
           clearInterval(interval);
-          window.dispatchEvent(new CustomEvent("organizer-approved"));
+          setTimeout(() => {   // ← delay to avoid race condition
+            window.dispatchEvent(new CustomEvent("organizer-approved"));
+          }, 500);
         }
-
         if (volunteerRequested && roles.includes("VOLUNTEER")) {
           clearInterval(interval);
-          window.dispatchEvent(new CustomEvent("volunteer-approved"));
+          setTimeout(() => {   // ← delay to avoid race condition
+            window.dispatchEvent(new CustomEvent("volunteer-approved"));
+          }, 500);
         }
       } catch (e) {}
     }, 5000);
-
     return () => clearInterval(interval);
   }, [user?.id, organizerRequested, volunteerRequested]);
+
+  // ---------------- LOAD PAST NOTIFICATIONS ----------------
+  useEffect(() => {
+    if (!user) return;
+    axios
+      .get(`${BASE_URL}/notifications`, { withCredentials: true })
+      .then((res) => {
+        const filtered = res.data.filter((n) => n.targetAudience === "ALL_STUDENTS");
+        setNotifications(filtered.map((n) => ({
+          id: n.id,
+          type: "announcement",
+          title: n.title,
+          description: n.message,
+          timestamp: new Date(n.createdAt).toLocaleString(),
+          read: false,
+        })));
+      })
+      .catch(console.error);
+  }, [user?.id]);
+
+  // ---------------- LIVE WEBSOCKET ----------------
+  useEffect(() => {
+    if (!user) return;
+    const client = new Client({
+      webSocketFactory: () => new SockJS(`${BASE_URL}/ws`),
+      reconnectDelay: 5000,
+      onConnect: () => {
+        client.subscribe("/topic/notifications/students", (msg) => {
+          const n = JSON.parse(msg.body);
+          setNotifications((prev) => [
+            {
+              id: n.id,
+              type: "announcement",
+              title: n.title,
+              description: n.message,
+              timestamp: new Date(n.createdAt).toLocaleString(),
+              read: false,
+            },
+            ...prev,
+          ]);
+          playSound();
+        });
+      },
+    });
+    client.activate();
+    return () => client.deactivate();
+  }, [user?.id]);
 
   // ---------------- RESTORE ----------------
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) {
-        setHydrated(true);
-        return;
-      }
+      if (!raw) { setHydrated(true); return; }
       const p = JSON.parse(raw);
       setRole(p.role || "guest");
       setUser(p.user || null);
       setPassState(p.pass || null);
       setSelected(p.selectedEventIds || []);
-      // ✅ paid is NOT restored from localStorage
     } catch (e) {
       console.log("storage error", e);
     } finally {
@@ -166,13 +218,7 @@ export function AppProvider({ children }) {
     if (!hydrated) return;
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({
-        role,
-        user,
-        pass,
-        selectedEventIds,
-        // ✅ paid is NOT saved to localStorage
-      })
+      JSON.stringify({ role, user, pass, selectedEventIds })
     );
   }, [role, user, pass, selectedEventIds, hydrated]);
 
@@ -200,19 +246,30 @@ export function AppProvider({ children }) {
       organizerApproved,
       volunteerApproved,
 
-      // LOGIN
+      // ← loginUser now sets both approved states immediately
       loginUser: (userData) => {
         setUser(userData);
-        setRole(userData.role || "student");
+        const roles = userData.roles || [];
+        let derivedRole = "student";
+        if (roles.includes("ORGANIZER") && roles.includes("VOLUNTEER")) {
+          derivedRole = "organizer";
+        } else if (roles.includes("ORGANIZER")) {
+          derivedRole = "organizer";
+        } else if (roles.includes("VOLUNTEER")) {
+          derivedRole = "volunteer";
+        } else if (roles.includes("ADMIN")) {
+          derivedRole = "admin";
+        }
+        setRole(derivedRole);
+        setOrganizerApproved(roles.includes("ORGANIZER")); // ← sync immediately
+        setVolunteerApproved(roles.includes("VOLUNTEER"));  // ← sync immediately
         setPassState(userData.passId || null);
       },
 
-      // UPDATE PROFILE
       updateProfile: (updatedData) => {
         setUser((prev) => ({ ...prev, ...updatedData }));
       },
 
-      // LOGOUT
       logout: () => {
         localStorage.removeItem(STORAGE_KEY);
         setRole("guest");
@@ -220,19 +277,18 @@ export function AppProvider({ children }) {
         setPassState(null);
         setSelected([]);
         setPaid(false);
+        setNotifications([]);
         setOrganizerRequested(false);
         setVolunteerRequested(false);
         setOrganizerApproved(false);
         setVolunteerApproved(false);
       },
 
-      // SET PASS
       setPass: (p) => {
         setPassState(p);
         setSelected([]);
       },
 
-      // EVENT TOGGLE
       toggleEvent: (id) => {
         setSelected((cur) => {
           const isSelected = cur.includes(id);
@@ -245,7 +301,6 @@ export function AppProvider({ children }) {
 
       clearSelection: () => setSelected([]),
 
-      // PAYMENT
       confirmPayment: () => {
         setPaid(true);
         setNotifications((n) => [
@@ -261,7 +316,16 @@ export function AppProvider({ children }) {
         ]);
       },
 
-      // REQUEST ORGANIZER
+      markNotificationRead: (id) => {
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+        );
+      },
+
+      markAllRead: () => {
+        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      },
+
       requestOrganizer: async () => {
         const res = await requestOrganizerApi();
         setOrganizerRequested(true);
@@ -269,7 +333,6 @@ export function AppProvider({ children }) {
         return res;
       },
 
-      // REQUEST VOLUNTEER
       requestVolunteer: async () => {
         const res = await requestVolunteerApi();
         setVolunteerRequested(true);
@@ -278,19 +341,10 @@ export function AppProvider({ children }) {
       },
     }),
     [
-      role,
-      user,
-      pass,
-      resolvedPass,
-      selectedEventIds,
-      paid,
-      notifications,
-      allEvents,
-      hydrated,
-      organizerRequested,
-      volunteerRequested,
-      organizerApproved,
-      volunteerApproved,
+      role, user, pass, resolvedPass, selectedEventIds,
+      paid, notifications, allEvents, hydrated,
+      organizerRequested, volunteerRequested,
+      organizerApproved, volunteerApproved,
     ]
   );
 
@@ -299,8 +353,6 @@ export function AppProvider({ children }) {
 
 export function useApp() {
   const ctx = useContext(AppCtx);
-  if (!ctx) {
-    throw new Error("useApp must be used inside AppProvider");
-  }
+  if (!ctx) throw new Error("useApp must be used inside AppProvider");
   return ctx;
 }
