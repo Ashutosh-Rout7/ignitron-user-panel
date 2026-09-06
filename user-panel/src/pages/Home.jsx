@@ -5,6 +5,10 @@ import {
   ArrowRight,
   Sparkles,
   Bot,
+  Zap,
+  Trophy,
+  Music,
+  Code2,
 } from "lucide-react";
 import { PageHero } from "../components/ui/PageHero";
 import { useApp } from "../lib/app-store";
@@ -22,6 +26,13 @@ function Home() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const highlights = [
+    { icon: Code2,  label: "Hackathons", desc: "48-hour build sprints with real prizes" },
+    { icon: Trophy, label: "Sports",     desc: "Cricket, volleyball, kabaddi & more" },
+    { icon: Music,  label: "Cultural",   desc: "Solo song, rangoli, dance & drama" },
+    { icon: Zap,    label: "Technical",  desc: "Math olympiad, business quiz & robotics" },
+  ];
 
   const handleGetPass = () =>
     navigate(role === "guest" ? "/login" : "/pass-selection");
@@ -88,6 +99,48 @@ function Home() {
           Browse events
         </button>
       </PageHero>
+
+      {/* ── WHAT'S HAPPENING (auto-sliding) ─────────────────────────── */}
+      <section className="py-16 overflow-hidden">
+        <div className="mx-auto max-w-7xl px-4 text-center">
+          <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">
+            What's happening at{" "}
+            <span className="text-gradient-brand">Ignitron 2027</span>
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Four categories. Endless memories.
+          </p>
+        </div>
+
+        <div className="relative mt-10">
+          {/* fade edges */}
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-background to-transparent" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-background to-transparent" />
+
+          <motion.div
+            className="flex gap-4 w-max"
+            animate={{ x: ["0%", "-50%"] }}
+            transition={{
+              duration: 18,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+          >
+            {[...highlights, ...highlights].map(({ icon: Icon, label, desc }, i) => (
+              <div
+                key={`${label}-${i}`}
+                className="w-64 flex-shrink-0 rounded-2xl glass p-6 text-center hover:shadow-glow transition"
+              >
+                <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-xl bg-gradient-brand shadow-glow">
+                  <Icon className="h-5 w-5 text-white" />
+                </div>
+                <h3 className="text-base font-semibold">{label}</h3>
+                <p className="mt-1 text-xs text-muted-foreground">{desc}</p>
+              </div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
 
       {/* ── AI ASSISTANT ─────────────────────────────────────────────── */}
       <section className="mx-auto max-w-5xl px-4 py-16">
