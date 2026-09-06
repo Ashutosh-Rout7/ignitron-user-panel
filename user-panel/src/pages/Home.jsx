@@ -3,15 +3,8 @@ import { motion } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
 import {
   ArrowRight,
-  CalendarCheck2,
   Sparkles,
-  Ticket,
-  Users,
   Bot,
-  Zap,
-  Trophy,
-  Music,
-  Code2,
 } from "lucide-react";
 import { PageHero } from "../components/ui/PageHero";
 import { useApp } from "../lib/app-store";
@@ -29,20 +22,6 @@ function Home() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-
-  const stats = [
-    { label: "Flagship events",   value: "12+",   icon: CalendarCheck2 },
-    { label: "Expected footfall", value: "8,000", icon: Users },
-    { label: "Prize pool",        value: "₹5L",   icon: Sparkles },
-    { label: "Passes sold",       value: "2,400", icon: Ticket },
-  ];
-
-  const highlights = [
-    { icon: Code2,  label: "Hackathons", desc: "48-hour build sprints with real prizes" },
-    { icon: Trophy, label: "Sports",     desc: "Cricket, volleyball, kabaddi & more" },
-    { icon: Music,  label: "Cultural",   desc: "Solo song, rangoli, dance & drama" },
-    { icon: Zap,    label: "Technical",  desc: "Math olympiad, business quiz & robotics" },
-  ];
 
   const handleGetPass = () =>
     navigate(role === "guest" ? "/login" : "/pass-selection");
@@ -109,57 +88,6 @@ function Home() {
           Browse events
         </button>
       </PageHero>
-
-      {/* ── STATS ────────────────────────────────────────────────────── */}
-      <section className="mx-auto max-w-7xl px-4 pb-12">
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          {stats.map(({ label, value, icon: Icon }) => (
-            <motion.div
-              key={label}
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="rounded-2xl glass p-5"
-            >
-              <Icon className="h-4 w-4 text-[color:var(--ignitron-orange)]" />
-              <p className="mt-3 text-2xl font-semibold tracking-tight">{value}</p>
-              <p className="text-xs text-muted-foreground">{label}</p>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── WHAT'S HAPPENING ─────────────────────────────────────────── */}
-      <section className="mx-auto max-w-7xl px-4 py-16">
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">
-            What's happening at{" "}
-            <span className="text-gradient-brand">Ignitron 2027</span>
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Four categories. Endless memories.
-          </p>
-        </div>
-
-        <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {highlights.map(({ icon: Icon, label, desc }, i) => (
-            <motion.div
-              key={label}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.08 }}
-              className="rounded-2xl glass p-6 text-center hover:shadow-glow transition"
-            >
-              <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-xl bg-gradient-brand shadow-glow">
-                <Icon className="h-5 w-5 text-white" />
-              </div>
-              <h3 className="text-base font-semibold">{label}</h3>
-              <p className="mt-1 text-xs text-muted-foreground">{desc}</p>
-            </motion.div>
-          ))}
-        </div>
-      </section>
 
       {/* ── AI ASSISTANT ─────────────────────────────────────────────── */}
       <section className="mx-auto max-w-5xl px-4 py-16">
