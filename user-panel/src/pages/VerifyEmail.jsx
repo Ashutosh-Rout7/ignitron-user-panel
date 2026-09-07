@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { verifyEmail } from "../services/AllServices";
 
@@ -7,8 +7,14 @@ function VerifyEmail() {
   const [status, setStatus] = useState("loading"); // loading | success | error
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
+  const calledRef = useRef(false);
 
   useEffect(() => {
+    // Prevent React StrictMode (dev) from firing this twice,
+    // which would consume the token on the 2nd call and show a false error
+    if (calledRef.current) return;
+    calledRef.current = true;
+
     const token = searchParams.get("token");
 
     if (!token) {
@@ -43,7 +49,7 @@ function VerifyEmail() {
 
         {status === "success" && (
           <>
-            <div className="text-5xl mb-4">Î“Â£Ã </div>
+            <div className="text-5xl mb-4">✅</div>
             <h2 className="text-xl font-bold text-white mb-2">Email Verified!</h2>
             <p className="text-gray-400 mb-4">{message}</p>
             <p className="text-sm text-gray-500">Redirecting to login in 3 seconds...</p>
@@ -52,7 +58,7 @@ function VerifyEmail() {
 
         {status === "error" && (
           <>
-            <div className="text-5xl mb-4">Î“Â¥Ã®</div>
+            <div className="text-5xl mb-4">❌</div>
             <h2 className="text-xl font-bold text-white mb-2">Verification Failed</h2>
             <p className="text-gray-400 mb-6">{message}</p>
             <button
