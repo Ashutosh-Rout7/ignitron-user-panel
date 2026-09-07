@@ -6,12 +6,12 @@ import { useApp } from "../lib/app-store";
 import { getallEvents } from "../services/AllServices";
 
 function Events() {
-  const { resolvedPass, selectedEventIds, toggleEvent,allEvents,setAllEvents } =useApp();
+  const { resolvedPass, selectedEventIds, toggleEvent, allEvents, setAllEvents } = useApp();
 
- // console.log("resolvedPass =", resolvedPass);
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
+  const [categoryFilter, setCategoryFilter] = useState("all"); // 👈 new
 
   useEffect(() => {
     loadEvents();
@@ -20,9 +20,7 @@ function Events() {
   const loadEvents = async () => {
     try {
       const data = await getallEvents();
-
       console.log("Events:", data);
-
       setAllEvents(data || []);
     } catch (error) {
       console.error("Failed to fetch events", error);
@@ -37,8 +35,14 @@ function Events() {
   const price = currentPass?.price || 0;
   const type = currentPass?.type || "";
 
-  const limitReached =
-    !!currentPass && selectedEventIds.length >= limit;
+  const limitReached = !!currentPass && selectedEventIds.length >= limit;
+
+  // 👇 new — derive available categories + filtered list
+  const categories = ["all", "sports", "cultural", "technical"];
+
+  const filteredEvents = allEvents.filter((e) =>
+    categoryFilter === "all" ? true : e.type === categoryFilter
+  );
 
   return (
     <div className="mx-auto max-w-7xl px-4 pb-40 pt-12">
@@ -46,10 +50,7 @@ function Events() {
       <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
-            Pick your{" "}
-            <span className="text-gradient-brand">
-              events
-            </span>
+            Pick your <span className="text-gradient-brand">events</span>
           </h1>
 
           <p className="mt-1 text-sm text-muted-foreground">
@@ -60,18 +61,12 @@ function Events() {
                   ₹{price} ({type})
                 </span>{" "}
                 pass — select up to{" "}
-                <span className="font-medium text-foreground">
-                  {limit}
-                </span>{" "}
-                events.
+                <span className="font-medium text-foreground">{limit}</span> events.
               </>
             ) : (
               <>
                 You haven't picked a pass yet.{" "}
-                <Link
-                  to="/pass-selection"
-                  className="font-medium text-gradient-brand"
-                >
+                <Link to="/pass-selection" className="font-medium text-gradient-brand">
                   Choose a pass →
                 </Link>
               </>
@@ -79,13 +74,9 @@ function Events() {
           </p>
         </div>
 
-        {/* COUNTER */}
         {currentPass && (
           <div className="rounded-2xl glass px-4 py-3 text-sm">
-            <span className="text-muted-foreground">
-              Selected{" "}
-            </span>
-
+            <span className="text-muted-foreground">Selected </span>
             <span className="font-semibold text-foreground">
               {selectedEventIds.length}/{limit}
             </span>
@@ -93,30 +84,43 @@ function Events() {
         )}
       </div>
 
+      {/* FILTER BAR — new */}
+      <div className="mt-6 flex flex-wrap gap-2">
+        {categories.map((cat) => (
+          <button
+            key={cat}
+            onClick={() => setCategoryFilter(cat)}
+            className={`px-4 py-2 rounded-full text-sm capitalize transition-colors ${
+              categoryFilter === cat
+                ? "bg-gradient-brand text-primary-foreground"
+                : "bg-white/10 text-muted-foreground hover:bg-white/20"
+            }`}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
+
       {/* LIMIT WARNING */}
       {limitReached && (
         <div className="mt-6 flex items-center gap-3 rounded-2xl border border-[color:var(--ignitron-orange)]/30 bg-[color:var(--ignitron-orange)]/10 px-4 py-3 text-sm">
           <AlertTriangle className="h-4 w-4 text-[color:var(--ignitron-orange)]" />
-          You've hit the limit for the ₹{price} pass.
-          Deselect an event to swap.
+          You've hit the limit for the ₹{price} pass. Deselect an event to swap.
         </div>
       )}
 
       {/* EVENTS */}
       {loading ? (
-        <div className="mt-12 text-center">
-          Loading events...
+        <div className="mt-12 text-center">Loading events...</div>
+      ) : filteredEvents.length === 0 ? (
+        <div className="mt-12 text-center text-muted-foreground">
+          No events found in this category.
         </div>
       ) : (
         <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {console.log("Rendering events", allEvents)}
-          {allEvents.map((e) => {
-            const isSelected =
-              selectedEventIds.includes(e.id);
-
-            const disabled =
-              !currentPass ||
-              (limitReached && !isSelected);
+          {filteredEvents.map((e) => {
+            const isSelected = selectedEventIds.includes(e.id);
+            const disabled = !currentPass || (limitReached && !isSelected);
 
             return (
               <EventCard
@@ -135,47 +139,24 @@ function Events() {
       {currentPass && selectedEventIds.length > 0 && (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/5 glass-strong">
           <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-4 md:flex-row">
-
             <div className="flex items-center gap-6 text-sm">
               <span>
-                <span className="text-muted-foreground">
-                  Selected{" "}
-                </span>
-
-                <span className="font-semibold">
-                  {selectedEventIds.length}
-                </span>
-
-                <span className="text-muted-foreground">
-                  /{limit}
-                </span>
+                <span className="text-muted-foreground">Selected </span>
+                <span className="font-semibold">{selectedEventIds.length}</span>
+                <span className="text-muted-foreground">/{limit}</span>
               </span>
-
               <span>
-                <span className="text-muted-foreground">
-                  Pass{" "}
-                </span>
-
-                <span className="font-semibold">
-                  ₹{price}
-                </span>
+                <span className="text-muted-foreground">Pass </span>
+                <span className="font-semibold">₹{price}</span>
               </span>
-
               <span>
-                <span className="text-muted-foreground">
-                  Total{" "}
-                </span>
-
-                <span className="font-semibold text-gradient-brand">
-                  ₹{price}
-                </span>
+                <span className="text-muted-foreground">Total </span>
+                <span className="font-semibold text-gradient-brand">₹{price}</span>
               </span>
             </div>
 
             <button
-              onClick={() =>
-                navigate("/booking-confirmation")
-              }
+              onClick={() => navigate("/booking-confirmation")}
               className="inline-flex items-center gap-2 rounded-full bg-gradient-brand px-5 py-3 text-sm font-semibold text-primary-foreground shadow-glow"
             >
               Continue to payment
