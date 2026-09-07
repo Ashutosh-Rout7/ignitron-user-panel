@@ -41,7 +41,7 @@ function ForgotPassword() {
         }
       >
         <div className="text-center py-6">
-          <div className="text-5xl mb-4">â‰¡Æ’Ã´Âº</div>
+          <div className="text-5xl mb-4">📧</div>
           <p className="text-gray-400 text-sm">
             If this email is registered, you'll receive a reset link shortly.
             Check your spam folder too!
