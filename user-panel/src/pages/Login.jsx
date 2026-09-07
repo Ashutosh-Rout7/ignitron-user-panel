@@ -73,7 +73,7 @@ function Login() {
       {/* Show approval message when redirected after role upgrade */}
       {approvalMessage && (
         <div className="mb-4 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-400">
-          🎉 {approvalMessage}
+          Ã°Å¸Å½â€° {approvalMessage}
         </div>
       )}
 
@@ -90,7 +90,7 @@ function Login() {
         <FormField
           label="Password"
           type={showPassword ? "text" : "password"}
-          placeholder="••••••••"
+          placeholder="Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢Ã¢â‚¬Â¢"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
@@ -109,6 +109,15 @@ function Login() {
           }
         />
 
+        <div className="flex justify-end">
+          <Link
+            to="/forgot-password"
+            className="text-xs font-medium text-muted-foreground hover:text-foreground transition"
+          >
+            Forgot password?
+          </Link>
+        </div>
+        
         <PrimaryButton
           type="submit"
           className="w-full"

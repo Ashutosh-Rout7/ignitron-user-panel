@@ -68,6 +68,12 @@ export const getProfile = async () => {
   return res.data;
 };
 
+// verify email
+export const verifyEmail = async (token) => {
+  const res = await API.get(`/api/register/verify-email?token=${token}`);
+  return res.data;
+};
+
 // get all pass
 export const getpass = async () => {
   const response = await API.get("/api/pass");

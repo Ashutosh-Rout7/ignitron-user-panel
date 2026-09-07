@@ -6,6 +6,9 @@ import ProfileGuard from "./components/ProfileGuard";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import VerifyEmail from "./pages/VerifyEmail";
 import CompleteProfile from "./pages/CompleteProfile";
 import PassSelection from "./pages/PassSelection";
 import Events from "./pages/Events";
@@ -26,6 +29,9 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/complete-profile" element={<CompleteProfile />}/>
 
         {/* Protected Routes */}
@@ -82,7 +88,7 @@ function App() {
             </ProfileGuard>
           }
         />
-        // in Routes, after /payment:
+        {/* in Routes, after /payment: */}
         <Route
           path="/payment-success"
           element={<PaymentSuccess />}
