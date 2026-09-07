@@ -23,40 +23,46 @@ function Login() {
   const { loginUser } = useApp();
   
   async function onSubmit(e) {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!email || !password) return;
+  if (!email || !password) return;
 
-    try {
-      setLoading(true);
+  try {
+    setLoading(true);
 
-      // 1. login (sets cookie/token)
-      await login({ email, password });
+    // 1. login (sets cookie/token)
+    await login({ email, password });
 
-      const user = await getProfile();
+    const user = await getProfile();
 
-      loginUser(user);
+    loginUser(user);
 
-      if (user.profileComplete) {
-        navigate("/pass-selection");
-      } else {
-        navigate("/complete-profile");
-      }
-    } catch (error) {
-  console.error(error);
-
-  if (error.response?.status === 401) {
-    toast.error(error.response.data.message);
-  } else if (error.response?.status === 400) {
-    toast.error("Please check your input");
-  } else {
-    toast.error("Something went wrong");
-  }
-} finally {
-      setLoading(false);
+    if (user.profileComplete) {
+      navigate("/pass-selection");
+    } else {
+      navigate("/complete-profile");
     }
-  }
+  } catch (error) {
+    console.error(error);
 
+    if (error.response?.status === 401) {
+      toast.error(error.response.data.message);
+    } else if (error.response?.status === 403) {
+      // backend sends this as a plain string body, not JSON
+      toast.error(
+        typeof error.response.data === "string"
+          ? error.response.data
+          : "Please verify your email before logging in."
+      );
+    } else if (error.response?.status === 400) {
+      toast.error("Please check your input");
+    } else {
+      toast.error("Something went wrong");
+    }
+  } finally {
+    setLoading(false);
+  }
+}
   return (
     <AuthShell
       title="Welcome back"
